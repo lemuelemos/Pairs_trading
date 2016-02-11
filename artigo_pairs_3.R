@@ -154,7 +154,7 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 
 ret_port[[length(ret_port)+1]] <- portret ## Retornos Totais
 names(ret_port)[p] <- paste0("Return Formation Period ",p)
-break
+
 #####################################################
 ############### Periodo de Trading ##################
 #####################################################
