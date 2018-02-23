@@ -8,28 +8,26 @@ library(stringr)
 library(BatchGetSymbols)
 library(quantmod)
 
-ncores <- detectCores()
-cl <- makeCluster(ncores)
-
-##### Pegando Tickers das ações que Compõe o Ibov
+##### Taking tickers that compound IBOV 
 Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
 
-# Datas para baixar os dados
-first.date <- Sys.Date() - 1620
+# Time Window to download the data
+first.date <- Sys.Date() - 1620 # Dados de 4 anos mais 6 meses para o período de trading
 last.date <- Sys.Date()
 
 #set folder for cache system
 pasta_dos_dados <- 'BGS_CACHE'
 
+## Downloading data from yahoo 
 ativosl <- BatchGetSymbols(tickers = Ativos, first.date, last.date,
                            cache.folder = pasta_dos_dados, do.cache = TRUE,thresh.bad.data = 0.9)
 
 
-ativosw <- reshape.wide(ativosl$df.tickers)
-dados_estimacao <- xts(ativosw$price.adjusted[,-1], order.by = ativosw$price.adjusted$ref.date)
-dados_estimacao <-  na.omit(dados_estimacao)
-periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)-180])
-dados_estimacao_teste <- window(dados_estimacao, start=periodo_teste[1], end=periodo_teste[2])
+ativosw <- reshape.wide(ativosl$df.tickers) #### Changing the arrangement of the dara to wide format
+dados_estimacao <- xts(ativosw$price.adjusted[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
+dados_estimacao <-  na.omit(dados_estimacao) ## Removing Missing Data
+periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)-180]) ### Setting the períod 
+dados_estimacao_teste <- window(dados_estimacao, start=periodo_teste[1], end=periodo_teste[2]) ### The formation períod
 Nomes <- colnames(dados_estimacao_teste)
 pares <- list(NULL)
 for(i in 1:ncol(dados_estimacao_teste)){
