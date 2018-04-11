@@ -7,6 +7,7 @@ library(dplyr)
 ##### Import data and cleaning NA's
 
 ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
+
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
 ibrx_2007_2018 <- as.data.frame(ibrx_2007_2018) ## Transform in data_frame to easy handling
 ibrx_2007_2018[,2:101] <- apply(ibrx_2007_2018[,2:101],2,as.numeric) ## Transform the data form char type to numeric type
@@ -20,4 +21,5 @@ ibrx_2008_2017_70 <- na.spline(ibrx_2008_2017_70) ## remove "NA's" spline method
 rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70"))
 
 ### Estimando modelo
+
 
