@@ -266,7 +266,7 @@ for(j in 1:length(invest)){
 }
 
 portret <- t(portret) ## Retornos Totais
-portsel <- sort(portret[,1], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
+portsel <- sort(portret[,3], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 portret1 <- portret
 
