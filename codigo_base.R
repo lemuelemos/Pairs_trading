@@ -34,8 +34,8 @@ for(i in 1:ncol(dados_estimacao_teste)){
   for(j in 1:ncol(dados_estimacao_teste)){
     if(i != j){
       pares[[length(pares)+1]] <- fit.pci(dados_estimacao_teste[,i], dados_estimacao_teste[,j], 
-                                          pci_opt_method=c("jp","twostep"),
-                                          par_model=c("par","ar1","rw"),
+                                          pci_opt_method=c("jp"),
+                                          par_model=c("par"),
                                           lambda=0,robust=FALSE,nu=5,include_alpha=FALSE)
       names(pares)[length(pares)] <- paste0(Nomes[i],"vs",Nomes[j])
     }
@@ -266,7 +266,7 @@ for(j in 1:length(invest)){
 }
 
 portret <- t(portret) ## Retornos Totais
-portsel <- sort(portret[,3], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
+portsel <- sort(portret[,1], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 portret1 <- portret
 
