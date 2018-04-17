@@ -23,105 +23,105 @@ rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70")) ## remove objects that will not
 Nomes <- colnames(ibrx_2008_2017_70)
 Nomes <- str_sub(Nomes, 1,6)
 
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=180)
+window_test <- seq(1,nrow(ibrx_2008_2017_70),by=132)
 
-for(i in seq_along(window_test)){
+for(p in seq_along(window_test)){
 test_period <- window(ibrx_2008_2017_70,
-                      start=time(ibrx_2008_2017_70)[window_test[i]],
-                      end=if(is.na(time(ibrx_2008_2017_70)[window_test[i]+1439])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
-                      else{time(ibrx_2008_2017_70)[window_test[i]+1439]})
-
+                      start=time(ibrx_2008_2017_70)[window_test[p]],
+                      end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
+                      else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
+nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
 ### Estimando modelo
 portpairs <- list(NULL) ## List the will contain the pairs estimated
-for(i in 1:ncol(test_period)){
+for(k in 1:ncol(test_period)){
   for(j in 1:ncol(test_period)){
-    if(i != j){
-      portpairs[[length(portpairs)+1]] <- fit.pci(test_period[,i], test_period[,j], 
+    if(k != j){
+      portpairs[[length(portpairs)+1]] <- fit.pci(test_period[,k], test_period[,j], 
                                           pci_opt_method=c("jp"),
                                           par_model=c("par"),
                                           lambda=0,robust=FALSE,nu=5,include_alpha=F)
-      names(portpairs)[length(portpairs)] <- paste0(Nomes[i],"vs",Nomes[j])
+      names(portpairs)[length(portpairs)] <- paste0(Nomes[k],"vs",Nomes[j])
+      print(paste0("Carteira ",length(portpairs)," de ",nport,". Período de Testes ",p))
      }
    }
  }
-
 portpairs <- portpairs[!sapply(portpairs,is.null)] ### Retirando os valores vazios
-
 ################# Retirando os pares com o R superior a 0.5 
-
+print("Retirando os pares com o R superior a 0.5")
 paresR <- list(NULL)
-for(i in 1:length(portpairs)){
-  if(portpairs[[i]]$pvmr > 0.5){
-    paresR[i] <- portpairs[i]
-    names(paresR)[i] <- names(portpairs)[i]
+for(l in 1:length(portpairs)){
+  if(portpairs[[l]]$pvmr > 0.5){
+    paresR[l] <- portpairs[l]
+    names(paresR)[l] <- names(portpairs)[l]
   }
 }
 paresR <- paresR[!sapply(paresR,is.null)] ### Retirando os valores vazios
 
 ################ Realizando o teste de significância para cointegração parcial
-
+print("Realizando o teste de significância para cointegração parcial")
 testepci <- list(NULL)
 paresRtested <- list(NULL)
-for(i in 1:length(paresR)){
-  testepci[[i]] <- test.pci(paresR[[i]],alpha = 0.05, 
+for(m in 1:length(paresR)){
+  testepci[[m]] <- test.pci(paresR[[m]],alpha = 0.05, 
                             null_hyp = c("rw", "ar1"),
                             robust = FALSE, 
                             pci_opt_method = c("jp", "twostep"))
-  names(testepci[i]) <- names(paresR)[i]
-  if(testepci[[i]]$p.value[3] <= 0.05){
-    paresRtested[i] <- paresR[i]
-    names(paresRtested)[i] <- names(paresR)[i]
+  names(testepci[m]) <- names(paresR)[m]
+  print(paste0("Testando par",length(testepci)," de ",length(paresR)))
+  if(testepci[[m]]$p.value[3] <= 0.05){
+    paresRtested[m] <- paresR[m]
+    names(paresRtested)[m] <- names(paresR)[m]
   }
 }
-
 paresRtested <- paresRtested[!sapply(paresRtested,is.null)] ### Retirando os valores vazios
 
 ##############################################################################
 
 ############# Estimando os Estados Ocultos
-
+print("Estimando os Estados Ocultos")
 paresRtestedM <- list(NULL)
-for(i in 1: length(paresRtested)){
-  paresRtestedM[[i]] <- statehistory.pci(paresRtested[[i]])
-  names(paresRtestedM)[i] <- names(paresRtested)[i]
+for(n in 1: length(paresRtested)){
+  paresRtestedM[[n]] <- statehistory.pci(paresRtested[[n]])
+  names(paresRtestedM)[n] <- names(paresRtested)[n]
 }
 
 # Variável paresRtestedM já são os pares para teste backtest
 ############### Normalizando O M
-
+print("Normalizando O M")
 Zm <- as.list(NULL)
-for(i in 1:length(paresRtestedM)){
-  Zm[[i]] <- paresRtestedM[[i]]$M/paresRtested[[i]]$sigma_M.se
-  names(Zm)[i] <- names(paresRtestedM)[i]
+for(o in 1:length(paresRtestedM)){
+  Zm[[o]] <- paresRtestedM[[o]]$M/paresRtested[[o]]$sigma_M.se
+  names(Zm)[o] <- names(paresRtestedM)[o]
 }
-
 Zm <- as.data.frame(Zm) ### Tos os M's normalizados
 
 ############# Sinal Para as Operações
 ## Openright/OutRight = Operações em que o valor do resíduo é positivo
 ## OpenLeft/OutLeft = Operações em que o valor de resídou é negativo
 ## threshold's = [1,0.5]
-
+print("Sinal Para as Operações - threshold's = [1,0.5]")
 sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 t <- c(1,0.5)
 sinal[1,1:length(sinal)] <- "Fora"
 colnames(sinal) <- names(Zm)
-for(j in 1:length(Zm)){
-  for(i in 2:nrow(Zm)){
-    if(Zm[i,j] > t[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -t[2]){
-      sinal[i,j] <- "OpenRight"
-    } else if(Zm[i,j] < -t[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < t[2]){
-      sinal[i,j] <- "OpenLeft"
-    } else if(Zm[i,j] < -t[2] && sinal[i-1,j] == "OpenRight"){
-      sinal[i,j] <- "OutRight"
-    } else if(Zm[i,j] > t[2] && sinal[i-1,j] == "OpenLeft"){
-      sinal[i,j] <- "OutLeft"
+for(z in 1:length(Zm)){
+  for(x in 2:nrow(Zm)){
+    if(Zm[x,z] > t[1] && sinal[x-1,z] != "OpenLeft" || sinal[x-1,z] == "OpenRight" && Zm[x,z] > -t[2]){
+      sinal[x,j] <- "OpenRight"
+    } else if(Zm[x,z] < -t[1] && sinal[x-1,z] != "OpenRight" || sinal[x-1,z] == "OpenLeft" && Zm[x,z] < t[2]){
+      sinal[x,z] <- "OpenLeft"
+    } else if(Zm[x,z] < -t[2] && sinal[x-1,z] == "OpenRight"){
+      sinal[x,z] <- "OutRight"
+    } else if(Zm[x,z] > t[2] && sinal[x-1,z] == "OpenLeft"){
+      sinal[x,z] <- "OutLeft"
     } else{
-      sinal[i,j] <- "Fora"
+      sinal[x,z] <- "Fora"
     }
   }
- }
+}
+
 ########## Loop para Pegar Preços de Entrada e Saída
+print("Coletando Preços de Entrada e Saída")
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
@@ -163,7 +163,7 @@ for(j in 1:length(Zm)){
 }
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
-
+print("Cálculo do Retorno Considerando o investimento de 1 Real")
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 portl <- as.vector(NULL)
@@ -278,13 +278,13 @@ for(j in 1:length(sinal)){
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-
+print("Calculando os Retornos Totais")
 portret <- as.data.frame(matrix(data = rep(0,60),ncol = ncol(Zm),nrow = 3))
-for(j in 1:length(invest)){
-  portret[1,j] <- (cumprod(invest[,j])[nrow(invest)]-1)*100
-  portret[2,j] <- sd(cumprod(invest[,j]))
-  portret[3,j] <- portret[1,j]/portret[2,j]
-  colnames(portret)[j] <- names(paresRtestedM)[j]
+for(f in 1:length(invest)){
+  portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
+  portret[2,f] <- sd(cumprod(invest[,f]))
+  portret[3,f] <- portret[1,j]/portret[2,f]
+  colnames(portret)[f] <- names(paresRtestedM)[f]
 }
 
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
