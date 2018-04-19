@@ -22,6 +22,7 @@ ibrx_2008_2017_70 <- na.spline(ibrx_2008_2017_70) ## remove "NA's" spline method
 rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70")) ## remove objects that will not be use 
 Nomes <- colnames(ibrx_2008_2017_70)
 Nomes <- str_sub(Nomes, 1,6)
+colnames(ibrx_2008_2017_70) <- Nomes
 
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=132)
 
@@ -40,14 +41,15 @@ for(k in 1:ncol(test_period)){
                                           pci_opt_method=c("jp"),
                                           par_model=c("par"),
                                           lambda=0,robust=FALSE,nu=5,include_alpha=F)
-      names(portpairs)[length(portpairs)] <- paste0(Nomes[k],"vs",Nomes[j])
+      names(portpairs)[length(portpairs)] <- paste0(Nomes[k],"vs ",Nomes[j])
       print(paste0("Carteira ",length(portpairs)," de ",nport,". Período de Testes ",p))
      }
    }
  }
 portpairs <- portpairs[!sapply(portpairs,is.null)] ### Retirando os valores vazios
+portpairs <- portpairs[!sapply(portpairs, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 ################# Retirando os pares com o R superior a 0.5 
-print("Retirando os pares com o R superior a 0.5")
+print(paste0("Retirando os pares com o R superior a 0.5. Portfólio ",p))
 paresR <- list(NULL)
 for(l in 1:length(portpairs)){
   if(portpairs[[l]]$pvmr > 0.5){
@@ -58,7 +60,7 @@ for(l in 1:length(portpairs)){
 paresR <- paresR[!sapply(paresR,is.null)] ### Retirando os valores vazios
 
 ################ Realizando o teste de significância para cointegração parcial
-print("Realizando o teste de significância para cointegração parcial")
+print(paste0("Realizando o teste de significância para cointegração parcial. Portfólio ",p))
 testepci <- list(NULL)
 paresRtested <- list(NULL)
 for(m in 1:length(paresR)){
@@ -78,7 +80,7 @@ paresRtested <- paresRtested[!sapply(paresRtested,is.null)] ### Retirando os val
 ##############################################################################
 
 ############# Estimando os Estados Ocultos
-print("Estimando os Estados Ocultos")
+print(paste0("Estimando os Estados Ocultos. Portfólio ",p))
 paresRtestedM <- list(NULL)
 for(n in 1: length(paresRtested)){
   paresRtestedM[[n]] <- statehistory.pci(paresRtested[[n]])
@@ -87,7 +89,7 @@ for(n in 1: length(paresRtested)){
 
 # Variável paresRtestedM já são os pares para teste backtest
 ############### Normalizando O M
-print("Normalizando O M")
+print(paste0("Normalizando O M. Portfólio",p))
 Zm <- as.list(NULL)
 for(o in 1:length(paresRtestedM)){
   Zm[[o]] <- paresRtestedM[[o]]$M/paresRtested[[o]]$sigma_M.se
@@ -99,7 +101,7 @@ Zm <- as.data.frame(Zm) ### Tos os M's normalizados
 ## Openright/OutRight = Operações em que o valor do resíduo é positivo
 ## OpenLeft/OutLeft = Operações em que o valor de resídou é negativo
 ## threshold's = [1,0.5]
-print("Sinal Para as Operações - threshold's = [1,0.5]")
+print(paste0("Sinal Para as Operações - threshold's = [1,0.5]. Portólio ",p))
 sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 t <- c(1,0.5)
 sinal[1,1:length(sinal)] <- "Fora"
@@ -133,7 +135,7 @@ tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = n
 
 
 ########## Loop para Pegar Preços de Entrada e Saída
-print("Coletando Preços de Entrada e Saída. Portfólio",p)
+print(paste0("Coletando Preços de Entrada e Saída. Portfólio",p))
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
@@ -183,7 +185,7 @@ for(j in 1:length(Zm)){
 }
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
-print("Cálculo do Retorno Considerando o investimento de 1 Real. Portfólio",p)
+print(paste0("Cálculo do Retorno Considerando o investimento de 1 Real. Portfólio",p))
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 portl <- as.vector(NULL)
@@ -298,7 +300,7 @@ for(j in 1:length(sinal)){
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-print("Calculando os Retornos Totais")
+print(paste0("Calculando os Retornos Totais. Portfólio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
 for(f in 1:length(invest)){
   portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
@@ -307,8 +309,10 @@ for(f in 1:length(invest)){
   colnames(portret)[f] <- names(paresRtestedM)[f]
 }
 
+portret <- t(portret) ## Retornos Totais
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 ret_port <- as.list(NULL)
-ret_port[[length(portpairs)+1]] <- t(portret) ## Retornos Totais
+ret_port[[length(ret_port)+1]] <- portret ## Retornos Totais
+names(ret_port)[p] <- paste0("Return Formation Period ",p)
 }
 
