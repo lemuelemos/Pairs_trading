@@ -133,7 +133,7 @@ tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = n
 
 
 ########## Loop para Pegar Preços de Entrada e Saída
-print("Coletando Preços de Entrada e Saída")
+print("Coletando Preços de Entrada e Saída. Portfólio",p)
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
@@ -183,7 +183,7 @@ for(j in 1:length(Zm)){
 }
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
-print("Cálculo do Retorno Considerando o investimento de 1 Real")
+print("Cálculo do Retorno Considerando o investimento de 1 Real. Portfólio",p)
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 portl <- as.vector(NULL)
