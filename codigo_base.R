@@ -12,8 +12,8 @@ library(quantmod)
 Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
 
 # Time Window to download the data
-first.date <- Sys.Date() - 1620 # Dados de 4 anos mais 6 meses para o período de trading
-last.date <- Sys.Date()
+first.date <- Sys.Date() - 1133 # Dados de 4 anos mais 6 meses para o período de trading
+last.date <- Sys.Date() - 1
 
 #set folder for cache system
 pasta_dos_dados <- 'BGS_CACHE'
