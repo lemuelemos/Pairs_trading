@@ -107,7 +107,11 @@ colnames(sinal) <- names(Zm)
 for(z in 1:length(Zm)){
   for(x in 2:nrow(Zm)){
     if(Zm[x,z] > t[1] && sinal[x-1,z] != "OpenLeft" || sinal[x-1,z] == "OpenRight" && Zm[x,z] > -t[2]){
+<<<<<<< HEAD
       sinal[x,z] <- "OpenRight"
+=======
+      sinal[x,j] <- "OpenRight"
+>>>>>>> 8e1b27e3a9d5e63087b738bc6be9ad0e0aafc9a1
     } else if(Zm[x,z] < -t[1] && sinal[x-1,z] != "OpenRight" || sinal[x-1,z] == "OpenLeft" && Zm[x,z] < t[2]){
       sinal[x,z] <- "OpenLeft"
     } else if(Zm[x,z] < -t[2] && sinal[x-1,z] == "OpenRight"){
@@ -120,6 +124,7 @@ for(z in 1:length(Zm)){
   }
 }
 
+<<<<<<< HEAD
 llongi <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Inicial
 lshorti <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## lshorti = Left Short Inicial
 llongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Final
@@ -130,6 +135,8 @@ rlongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow
 rshortf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## rshorti = Right Short Final
 tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 
+=======
+>>>>>>> 8e1b27e3a9d5e63087b738bc6be9ad0e0aafc9a1
 ########## Loop para Pegar Preços de Entrada e Saída
 print("Coletando Preços de Entrada e Saída")
 for(j in 1:length(Zm)){
@@ -181,7 +188,10 @@ for(j in 1:length(Zm)){
 }
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8e1b27e3a9d5e63087b738bc6be9ad0e0aafc9a1
 print("Cálculo do Retorno Considerando o investimento de 1 Real")
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
@@ -298,7 +308,11 @@ names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 print("Calculando os Retornos Totais")
+<<<<<<< HEAD
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
+=======
+portret <- as.data.frame(matrix(data = rep(0,60),ncol = ncol(Zm),nrow = 3))
+>>>>>>> 8e1b27e3a9d5e63087b738bc6be9ad0e0aafc9a1
 for(f in 1:length(invest)){
   portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
   portret[2,f] <- sd(cumprod(invest[,f]))
