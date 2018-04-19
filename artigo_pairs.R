@@ -22,6 +22,7 @@ ibrx_2008_2017_70 <- na.spline(ibrx_2008_2017_70) ## remove "NA's" spline method
 rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70")) ## remove objects that will not be use 
 Nomes <- colnames(ibrx_2008_2017_70)
 Nomes <- str_sub(Nomes, 1,6)
+colnames(ibrx_2008_2017_70) <- Nomes
 
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=132)
 
@@ -40,12 +41,13 @@ for(k in 1:ncol(test_period)){
                                           pci_opt_method=c("jp"),
                                           par_model=c("par"),
                                           lambda=0,robust=FALSE,nu=5,include_alpha=F)
-      names(portpairs)[length(portpairs)] <- paste0(Nomes[k],"vs",Nomes[j])
+      names(portpairs)[length(portpairs)] <- paste0(Nomes[k],"vs ",Nomes[j])
       print(paste0("Carteira ",length(portpairs)," de ",nport,". Período de Testes ",p))
      }
    }
  }
 portpairs <- portpairs[!sapply(portpairs,is.null)] ### Retirando os valores vazios
+portpairs <- portpairs[!sapply(portpairs, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 ################# Retirando os pares com o R superior a 0.5 
 print("Retirando os pares com o R superior a 0.5")
 paresR <- list(NULL)
