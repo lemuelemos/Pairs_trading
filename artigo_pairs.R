@@ -107,7 +107,7 @@ colnames(sinal) <- names(Zm)
 for(z in 1:length(Zm)){
   for(x in 2:nrow(Zm)){
     if(Zm[x,z] > t[1] && sinal[x-1,z] != "OpenLeft" || sinal[x-1,z] == "OpenRight" && Zm[x,z] > -t[2]){
-      sinal[x,z] <- "OpenRight"
+      sinal[x,j] <- "OpenRight"
     } else if(Zm[x,z] < -t[1] && sinal[x-1,z] != "OpenRight" || sinal[x-1,z] == "OpenLeft" && Zm[x,z] < t[2]){
       sinal[x,z] <- "OpenLeft"
     } else if(Zm[x,z] < -t[2] && sinal[x-1,z] == "OpenRight"){
@@ -120,6 +120,7 @@ for(z in 1:length(Zm)){
   }
 }
 
+
 llongi <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Inicial
 lshorti <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## lshorti = Left Short Inicial
 llongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Final
@@ -129,6 +130,7 @@ rshorti <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nro
 rlongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## rlongf = Right Long Final
 rshortf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## rshorti = Right Short Final
 tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+
 
 ########## Loop para Pegar Preços de Entrada e Saída
 print("Coletando Preços de Entrada e Saída")
@@ -181,7 +183,6 @@ for(j in 1:length(Zm)){
 }
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
-
 print("Cálculo do Retorno Considerando o investimento de 1 Real")
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
