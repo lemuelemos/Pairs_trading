@@ -25,6 +25,7 @@ Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
 
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=132)
+ret_port <- as.list(NULL)
 
 for(p in seq_along(window_test)){
 test_period <- window(ibrx_2008_2017_70,
@@ -67,7 +68,7 @@ for(m in 1:length(paresR)){
   testepci[[m]] <- test.pci(paresR[[m]],alpha = 0.05, 
                             null_hyp = c("rw", "ar1"),
                             robust = FALSE, 
-                            pci_opt_method = c("jp", "twostep"))
+                            pci_opt_method = c("jp"))
   names(testepci[m]) <- names(paresR)[m]
   print(paste0("Testando par",length(testepci)," de ",length(paresR)))
   if(testepci[[m]]$p.value[3] <= 0.05){
@@ -106,18 +107,18 @@ sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow 
 t <- c(1,0.5)
 sinal[1,1:length(sinal)] <- "Fora"
 colnames(sinal) <- names(Zm)
-for(z in 1:length(Zm)){
-  for(x in 2:nrow(Zm)){
-    if(Zm[x,z] > t[1] && sinal[x-1,z] != "OpenLeft" || sinal[x-1,z] == "OpenRight" && Zm[x,z] > -t[2]){
-      sinal[x,j] <- "OpenRight"
-    } else if(Zm[x,z] < -t[1] && sinal[x-1,z] != "OpenRight" || sinal[x-1,z] == "OpenLeft" && Zm[x,z] < t[2]){
-      sinal[x,z] <- "OpenLeft"
-    } else if(Zm[x,z] < -t[2] && sinal[x-1,z] == "OpenRight"){
-      sinal[x,z] <- "OutRight"
-    } else if(Zm[x,z] > t[2] && sinal[x-1,z] == "OpenLeft"){
-      sinal[x,z] <- "OutLeft"
+for(j in 1:length(Zm)){
+  for(i in 2:nrow(Zm)){
+    if(Zm[i,j] > t[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -t[2]){
+      sinal[i,j] <- "OpenRight"
+    } else if(Zm[i,j] < -t[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < t[2]){
+      sinal[i,j] <- "OpenLeft"
+    } else if(Zm[i,j] < -t[2] && sinal[i-1,j] == "OpenRight"){
+      sinal[i,j] <- "OutRight"
+    } else if(Zm[i,j] > t[2] && sinal[i-1,j] == "OpenLeft"){
+      sinal[i,j] <- "OutLeft"
     } else{
-      sinal[x,z] <- "Fora"
+      sinal[i,j] <- "Fora"
     }
   }
 }
@@ -305,13 +306,12 @@ portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 
 for(f in 1:length(invest)){
   portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
   portret[2,f] <- sd(cumprod(invest[,f]))
-  portret[3,f] <- portret[1,j]/portret[2,f]
+  portret[3,f] <- portret[1,f]/portret[2,f]
   colnames(portret)[f] <- names(paresRtestedM)[f]
 }
 
 portret <- t(portret) ## Retornos Totais
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
-ret_port <- as.list(NULL)
 ret_port[[length(ret_port)+1]] <- portret ## Retornos Totais
 names(ret_port)[p] <- paste0("Return Formation Period ",p)
 }
