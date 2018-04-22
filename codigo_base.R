@@ -12,7 +12,7 @@ library(quantmod)
 Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
 
 # Time Window to download the data
-first.date <- Sys.Date() - 1133 # Dados de 4 anos mais 6 meses para o período de trading
+first.date <- Sys.Date() - 1619 # Dados de 4 anos mais 6 meses para o período de trading
 last.date <- Sys.Date() - 1
 
 #set folder for cache system
@@ -26,7 +26,7 @@ ativosl <- BatchGetSymbols(tickers = Ativos, first.date, last.date,
 ativosw <- reshape.wide(ativosl$df.tickers) #### Changing the arrangement of the dara to wide format
 dados_estimacao <- xts(ativosw$price.adjusted[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
 dados_estimacao <-  na.omit(dados_estimacao) ## Removing Missing Data
-periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)-180]) ### Setting the períod 
+periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)]-180) ### Setting the períod 
 dados_estimacao_teste <- window(dados_estimacao, start=periodo_teste[1], end=periodo_teste[2]) ### The formation períod
 Nomes <- colnames(dados_estimacao_teste)
 pares <- list(NULL)
