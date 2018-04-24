@@ -131,11 +131,14 @@ tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = n
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
-       && sinal[i-1,j] == "Fora" 
+       && sinal[i-1,j] == "Fora"
+       && i != nrow(sinal)
        || sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "OutLeft"
+       && i != nrow(sinal)
        || sinal[i,j] == "OpenRight" 
-       && sinal[i-1,j] == "OutRight"){
+       && sinal[i-1,j] == "OutRight"
+       && i != nrow(sinal)){
       rlongi[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
                                                   colnames(dados_estimacao_teste))]
       rshorti[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
@@ -143,7 +146,9 @@ for(j in 1:length(Zm)){
       colnames(rlongi)[j] <- paste0(names(paresRtestedM)[j],"RL")
       colnames(rshorti)[j] <- paste0(names(paresRtestedM)[j],"RS")
     } else if(sinal[i,j] == "OutRight" 
-              && sinal[i-1,j] == "OpenRight"){
+              && sinal[i-1,j] == "OpenRight"
+              || i == nrow(sinal)
+              && tt1[i-1,j] == "OpenRight"){
       rlongf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
                                                   colnames(dados_estimacao_teste))]
       rshortf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
@@ -151,11 +156,14 @@ for(j in 1:length(Zm)){
       colnames(rlongf)[j] <- paste0(names(paresRtestedM)[j],"RL")
       colnames(rshortf)[j] <- paste0(names(paresRtestedM)[j],"RS")
     } else if(sinal[i,j] == "OpenLeft" 
-              && sinal[i-1,j] == "Fora" 
+              && sinal[i-1,j] == "Fora"
+              && i != nrow(sinal)
               || sinal[i,j] == "OpenLeft" 
               && sinal[i-1,j] == "OutRight"
+              && i != nrow(sinal)
               || sinal[i,j] == "OpenLeft"
-              && sinal[i-1,j] == "OutLeft"){
+              && sinal[i-1,j] == "OutLeft"
+              && i != nrow(sinal)){
       llongi[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
                                                   colnames(dados_estimacao_teste))]
       lshorti[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
@@ -163,7 +171,9 @@ for(j in 1:length(Zm)){
       colnames(llongi)[j] <- paste0(names(paresRtestedM)[j],"LL")
       colnames(lshorti)[j] <- paste0(names(paresRtestedM)[j],"LS")
     } else if(sinal[i,j] == "OutLeft" 
-              && sinal[i-1,j] == "OpenLeft"){
+              && sinal[i-1,j] == "OpenLeft"
+              || i == nrow(sinal)
+              && tt1[i-1,j] == "OpenLeft"){
       llongf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
                                                   colnames(dados_estimacao_teste))]
       lshortf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
@@ -194,20 +204,26 @@ for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
     invest[i,j] <- invest[k-1,j]
     if(sinal[i,j] == "OpenRight" 
-       && sinal[i-1,j] == "Fora" 
+       && sinal[i-1,j] == "Fora"
+       && i != nrow(sinal)
        || sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "OutLeft"
+       && i != nrow(sinal)
        || sinal[i,j] == "OpenRight" 
-       && sinal[i-1,j] == "OutRight"){
+       && sinal[i-1,j] == "OutRight"
+       && i != nrow(sinal)){
       if(rlongi[i,j]*paresRtested[[j]]$beta/rshorti[i,j] < 1){
         portl <- -((rlongi[i,j]*paresRtested[[j]]$beta*invest[i-1,j])/rshorti[i,j]) 
         ports <- invest[i-1,j]
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Aberto"
+        tt[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutRight" 
+             && sinal[k-1,j] == "OpenRight"
+             || k == nrow(sinal)
+             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenRight"){
             longf <- rlongf[k,j]
             shortf <- rshortf[k,j]
@@ -216,6 +232,7 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
+            tt[k,j] <- "Saiu"
           }
         }
       } else{
@@ -224,9 +241,12 @@ for(j in 1:length(sinal)){
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Aberto"
+        tt[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutRight" 
+             && sinal[k-1,j] == "OpenRight"
+             || k == nrow(sinal)
+             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenRight"){
             longf <- rlongf[k,j]
             shortf <- rshortf[k,j]
@@ -235,24 +255,31 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
+            tt[k,j] <- "Saiu"
           }
         } 
       } 
     } else if(sinal[i,j] == "OpenLeft" 
-              && sinal[i-1,j] == "Fora" 
+              && sinal[i-1,j] == "Fora"
+              && i != nrow(sinal)
               || sinal[i,j] == "OpenLeft" 
               && sinal[i-1,j] == "OutRight"
+              && i != nrow(sinal)
               || sinal[i,j] == "OpenLeft"
-              && sinal[i-1,j] == "OutLeft"){
+              && sinal[i-1,j] == "OutLeft"
+              && i != nrow(sinal)){
       if(lshorti[i,j]*paresRtested[[j]]$beta/llongi[i,j] < 1){
         portl <- -invest[i-1,j]
         ports <- ((lshorti[i,j]*paresRtested[[j]]$beta)/llongi[i,j])*invest[i-1,j]
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Aberto"
+        tt[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutLeft" 
+             && sinal[k-1,j] == "OpenLeft"
+             || k == nrow(sinal) 
+             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenLeft"){
             longf <- llongf[k,j]
             shortf <- lshortf[k,j]
@@ -261,6 +288,7 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
+            tt[k,j] <- "Saiu"
           }
         } 
       } else{
@@ -269,9 +297,12 @@ for(j in 1:length(sinal)){
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Aberto"
+        tt[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutLeft" 
+             && sinal[k-1,j] == "OpenLeft"
+             || k == nrow(sinal) 
+             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenLeft"){
             longf <- llongf[k,j]
             shortf <- lshortf[k,j]
@@ -280,11 +311,18 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
+            tt[k,j] <- "Saiu"
           }
         } 
       } 
     } else{
-      tt[i,j] <- "Aberto"
+      tt[i,j] <- if(sinal[i-1,j] != "Fora"
+                 && i != nrow(sinal)
+                 && sinal[i,j] != "Fora"){
+        "Aberto"
+      } else{
+        "Fora"
+      }
     }
   }
 }
