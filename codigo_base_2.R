@@ -117,6 +117,7 @@ for(j in 1:length(Zm)){
 }
 
 
+########## Loop para Pegar Preços de Entrada e Saída
 llongi <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Inicial
 lshorti <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## lshorti = Left Short Inicial
 llongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## llongi = Left Long Final
@@ -127,7 +128,6 @@ rlongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow
 rshortf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## rshorti = Right Short Final
 tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 
-########## Loop para Pegar Preços de Entrada e Saída
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
@@ -176,6 +176,7 @@ for(j in 1:length(Zm)){
   }
 }
 
+
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
 
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
@@ -191,7 +192,7 @@ shortf <- as.vector(NULL)
 tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
-    #invest[i,j] <- invest[k-1,j]
+    invest[i,j] <- invest[k-1,j]
     if(sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "Fora" 
        || sinal[i,j] == "OpenRight" 
@@ -288,16 +289,16 @@ for(j in 1:length(sinal)){
   }
 }
 
+
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 names(retorno) <- names(paresRtested)
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-#((invest[nrow(Zm),j]/invest[1,j])-1)*100
 portret <- as.data.frame(matrix(data = rep(0,length(Zm)*3),ncol = length(Zm),nrow = 3))
-for(f in 1:length(invest)){
-  portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
-  portret[2,f] <- sd(cumprod(invest[,f]))
-  portret[3,f] <- portret[1,f]/portret[2,f]
-  colnames(portret)[f] <- names(paresRtestedM)[f]
+for(j in 1:length(invest)){
+  portret[1,j] <- (invest[nrow(invest),j]-1)*100
+  portret[2,j] <- sd(invest[,j])
+  portret[3,j] <- portret[1,j]/portret[2,j]
+  colnames(portret)[j] <- names(paresRtestedM)[j]
 }
 
 portret <- t(portret) ## Retornos Totais
@@ -319,9 +320,9 @@ for(j in 1:length(portsel)){
 pares2 <- list(NULL)
 for(j in 1:length(parestrade)){
   pares2[[j]] <- fit.pci(parestrade[[j]][,1],parestrade[[j]][,2], 
-                        pci_opt_method=c("jp"),
-                        par_model=c("par","ar1","rw"),
-                        lambda=0,robust=FALSE,nu=5,include_alpha=FALSE)
+                         pci_opt_method=c("jp"),
+                         par_model=c("par","ar1","rw"),
+                         lambda=0,robust=FALSE,nu=5,include_alpha=FALSE)
   names(pares2)[length(pares2)] <- names(portsel)[j]
 }
 
