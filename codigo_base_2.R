@@ -303,7 +303,7 @@ for(j in 1:length(sinal)){
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Abriu"
+        ttf[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutLeft" 
              && sinal[k-1,j] == "OpenLeft"
@@ -321,7 +321,7 @@ for(j in 1:length(sinal)){
         } 
       } 
     } else{
-      tt[i,j] <- "Aberto"
+      ttf[i,j] <- "Aberto"
     }
   }
 }
