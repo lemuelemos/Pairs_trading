@@ -8,6 +8,15 @@ library(stringr)
 library(BatchGetSymbols)
 library(quantmod)
 
+############ Comentários sobre andamento das modificações####################
+# Lembrar que o código responsável pela captura dos preços está correto, porém, ao calcular os retornos, 
+# o sinal de operação obtemos uma situação em que está a abertura de uma operação. Duas alternativas:
+# 1- Modificar o gerador de sinal para a situação de estar no último dado setar para "fora"
+# 2- Comtemplar essa situação no pŕoprio algorítimo de pegar os preços.
+
+###########################################################################
+
+
 ##### Taking tickers that compound IBOV 
 Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
 
@@ -128,6 +137,7 @@ rlongf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow
 rshortf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))) ## rshorti = Right Short Final
 tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 
+########## Loop para Pegar Preços de Entrada e Saída
 for(j in 1:length(Zm)){
   for(i in 2:nrow(sinal)){
     if(sinal[i,j] == "OpenRight" 
@@ -148,7 +158,7 @@ for(j in 1:length(Zm)){
     } else if(sinal[i,j] == "OutRight" 
               && sinal[i-1,j] == "OpenRight"
               || i == nrow(sinal)
-              && tt1[i-1,j] == "OpenRight"){
+              && sinal[i-1,j] == "OpenRight"){
       rlongf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
                                                   colnames(dados_estimacao_teste))]
       rshortf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
@@ -173,7 +183,7 @@ for(j in 1:length(Zm)){
     } else if(sinal[i,j] == "OutLeft" 
               && sinal[i-1,j] == "OpenLeft"
               || i == nrow(sinal)
-              && tt1[i-1,j] == "OpenLeft"){
+              && sinal[i-1,j] == "OpenLeft"){
       llongf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],end = 8),
                                                   colnames(dados_estimacao_teste))]
       lshortf[i,j] <- dados_estimacao_teste[i,grep(str_sub(names(paresRtestedM)[j],start = -8),
@@ -188,7 +198,6 @@ for(j in 1:length(Zm)){
 
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
-
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 portl <- as.vector(NULL)
@@ -199,10 +208,10 @@ longi <- as.vector(NULL)
 shorti <- as.vector(NULL)
 longf <- as.vector(NULL)
 shortf <- as.vector(NULL) 
-tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+ttf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
-    invest[i,j] <- invest[k-1,j]
+    #invest[i,j] <- invest[k-1,j]
     if(sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "Fora"
        && i != nrow(sinal)
@@ -218,12 +227,11 @@ for(j in 1:length(sinal)){
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Abriu"
+        ttf[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutRight" 
              && sinal[k-1,j] == "OpenRight"
              || k == nrow(sinal)
-             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenRight"){
             longf <- rlongf[k,j]
             shortf <- rshortf[k,j]
@@ -232,7 +240,7 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
-            tt[k,j] <- "Saiu"
+            ttf[k,j] <- "Saiu"
           }
         }
       } else{
@@ -241,12 +249,11 @@ for(j in 1:length(sinal)){
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Abriu"
+        ttf[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutRight" 
              && sinal[k-1,j] == "OpenRight"
              || k == nrow(sinal)
-             && tt[k-1,j] == "Aberto"
              && sinal[k-1,j] == "OpenRight"){
             longf <- rlongf[k,j]
             shortf <- rshortf[k,j]
@@ -255,7 +262,7 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
-            tt[k,j] <- "Saiu"
+            ttf[k,j] <- "Saiu"
           }
         } 
       } 
@@ -274,12 +281,11 @@ for(j in 1:length(sinal)){
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
-        tt[i,j] <- "Abriu"
+        ttf[i,j] <- "Abriu"
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutLeft" 
              && sinal[k-1,j] == "OpenLeft"
-             || k == nrow(sinal) 
-             && tt[k-1,j] == "Aberto"
+             || k == nrow(sinal)
              && sinal[k-1,j] == "OpenLeft"){
             longf <- llongf[k,j]
             shortf <- lshortf[k,j]
@@ -288,7 +294,7 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
-            tt[k,j] <- "Saiu"
+            ttf[k,j] <- "Saiu"
           }
         } 
       } else{
@@ -301,8 +307,7 @@ for(j in 1:length(sinal)){
         for(k in i:nrow(sinal)){
           if(sinal[k,j] == "OutLeft" 
              && sinal[k-1,j] == "OpenLeft"
-             || k == nrow(sinal) 
-             && tt[k-1,j] == "Aberto"
+             || k == nrow(sinal)
              && sinal[k-1,j] == "OpenLeft"){
             longf <- llongf[k,j]
             shortf <- lshortf[k,j]
@@ -311,32 +316,25 @@ for(j in 1:length(sinal)){
             portf <- -portl*longf - ports*shortf
             retorno[k,j] <- (porti+portf)/invest[k-1,j]
             invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
-            tt[k,j] <- "Saiu"
+            ttf[k,j] <- "Saiu"
           }
         } 
       } 
     } else{
-      tt[i,j] <- if(sinal[i-1,j] != "Fora"
-                 && i != nrow(sinal)
-                 && sinal[i,j] != "Fora"){
-        "Aberto"
-      } else{
-        "Fora"
-      }
+      tt[i,j] <- "Aberto"
     }
   }
 }
-
 
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 names(retorno) <- names(paresRtested)
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 portret <- as.data.frame(matrix(data = rep(0,length(Zm)*3),ncol = length(Zm),nrow = 3))
-for(j in 1:length(invest)){
-  portret[1,j] <- (invest[nrow(invest),j]-1)*100
-  portret[2,j] <- sd(invest[,j])
-  portret[3,j] <- portret[1,j]/portret[2,j]
-  colnames(portret)[j] <- names(paresRtestedM)[j]
+for(f in 1:length(invest)){
+  portret[1,f] <- (cumprod(invest[,f])[nrow(invest)]-1)*100
+  portret[2,f] <- sd(cumprod(invest[,f]))
+  portret[3,f] <- portret[1,f]/portret[2,f]
+  colnames(portret)[f] <- names(paresRtestedM)[f]
 }
 
 portret <- t(portret) ## Retornos Totais
