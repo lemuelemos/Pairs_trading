@@ -211,7 +211,7 @@ shortf <- as.vector(NULL)
 ttf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
-    #invest[i,j] <- invest[k-1,j]
+    #invest[i,j] <- invest[k,j]
     if(sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "Fora"
        && i != nrow(sinal)
@@ -321,7 +321,11 @@ for(j in 1:length(sinal)){
         } 
       } 
     } else{
-      ttf[i,j] <- "Aberto"
+      if(i == k){
+        ttf[i,j] <- "Saiu"
+      } else{
+        ttf[i,j] <- "Aberto"
+      }
     }
   }
 }
