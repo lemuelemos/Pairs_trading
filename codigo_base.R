@@ -540,7 +540,7 @@ names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 
-portret <- as.data.frame(matrix(data = rep(0,60),ncol = ncol(Zm),nrow = 3))
+portret <- as.data.frame(matrix(data = rep(0,length(Zm)*3),ncol = length(Zm),nrow = 3))
 for(j in 1:length(invest)){
   portret[1,j] <- (invest[nrow(invest),j]-1)*100
   portret[2,j] <- sd(invest[,j])
