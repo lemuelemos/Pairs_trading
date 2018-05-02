@@ -321,8 +321,8 @@ for(j in 1:length(sinal)){
         } 
       } 
     } else{
-      if(i == k){
-        ttf[i,j] <- "Saiu"
+      if(i == k){          ### Mudar teste de condição. Problemático pelo o k só ser declarado dentro do laço for. 
+        ttf[i,j] <- "Saiu" ### Tentar sinal[i,j] == sina[i-1,j], então ttf[i,j] <- "Aberto", senão, ttf[i,j] <- "Saiu"
       } else{
         ttf[i,j] <- "Aberto"
       }
