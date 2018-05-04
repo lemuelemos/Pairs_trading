@@ -27,6 +27,8 @@ colnames(ibrx_2008_2017_70) <- Nomes
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
 ret_port <- as.list(NULL)
 trading_return <- as.list(NULL)
+select_port <- as.list(NULL)
+retornos <- as.list(NULL)
 
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
@@ -356,6 +358,7 @@ for(j in 1:length(Zm)){
   
   print("Período de Trading")
   portsel <- sort(ret_port[[p]][,3], decreasing = T)[1:20] ## Seleect the top 20 sharp's
+  select_port[[p]] <- names(portsel)
   if(nrow(test_period) ==  1008){ # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
@@ -492,8 +495,8 @@ for(j in 1:length(Zm)){
 
 ##### Cálculo do Retorno Considerando o investimento de 1 Real.###################
 print(paste0("Cálculo do Retorno Considerando o investimento de 1 Real. Portfólio",p))
-invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+invest_t <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 portl <- as.vector(NULL)
 ports <- as.vector(NULL)
 porti <- as.vector(NULL)
@@ -505,7 +508,7 @@ shortf <- as.vector(NULL)
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
-    #invest[i,j] <- invest[i-1,j]
+    #invest_t[i,j] <- invest_t[i-1,j]
     if(sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "Fora"
        && i != nrow(sinal)
@@ -516,15 +519,15 @@ for(j in 1:length(sinal)){
        && sinal[i-1,j] == "OutRight"
        && i != nrow(sinal)){
       if(rlongi[i,j]*paresRtested[[j]]$beta/rshorti[i,j] < 1){
-        portl <- -((rlongi[i,j]*paresRtested[[j]]$beta*invest[i-1,j])/rshorti[i,j]) 
-        ports <- invest[i-1,j]
+        portl <- -((rlongi[i,j]*paresRtested[[j]]$beta*invest_t[i-1,j])/rshorti[i,j]) 
+        ports <- invest_t[i-1,j]
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
         tt2[i,j] <- "Abriu"
       } else{
-        portl <- -invest[i-1,j]
-        ports <- (rshorti[i,j]/(paresRtested[[j]]$beta*rlongi[i,j]))*invest[i-1,j]
+        portl <- -invest_t[i-1,j]
+        ports <- (rshorti[i,j]/(paresRtested[[j]]$beta*rlongi[i,j]))*invest_t[i-1,j]
         longi <- rlongi[i,j]
         shorti <- rshorti[i,j]
         porti <- portl+ports
@@ -540,8 +543,8 @@ for(j in 1:length(sinal)){
       longf <- ((longf/longi)-1)+1
       shortf <- 1+((shortf/shorti)-1)
       portf <- -portl*longf - ports*shortf
-      retorno[i,j] <- (porti+portf)/invest[i-1,j]
-      invest[i,j] <- (((porti+portf)/invest[i-1,j])+1)*invest[i-1,j]
+      retorno_t[i,j] <- (porti+portf)/invest_t[i-1,j]
+      invest_t[i,j] <- (((porti+portf)/invest_t[i-1,j])+1)*invest_t[i-1,j]
       tt2[i,j] <- "Saiu"
     } else if(sinal[i,j] == "OpenLeft" 
               && sinal[i-1,j] == "Fora"
@@ -553,15 +556,15 @@ for(j in 1:length(sinal)){
               && sinal[i-1,j] == "OutLeft"
               && i != nrow(sinal)){
       if(lshorti[i,j]*paresRtested[[j]]$beta/llongi[i,j] < 1){
-        portl <- -invest[i-1,j]
-        ports <- ((lshorti[i,j]*paresRtested[[j]]$beta)/llongi[i,j])*invest[i-1,j]
+        portl <- -invest_t[i-1,j]
+        ports <- ((lshorti[i,j]*paresRtested[[j]]$beta)/llongi[i,j])*invest_t[i-1,j]
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
         tt2[i,j] <- "Abriu"
       } else{
-        portl <- -(llongi[i,j]/(paresRtested[[j]]$beta*lshorti[i,j]))*invest[i-1,j]
-        ports <- invest[i-1,j]
+        portl <- -(llongi[i,j]/(paresRtested[[j]]$beta*lshorti[i,j]))*invest_t[i-1,j]
+        ports <- invest_t[i-1,j]
         longi <- llongi[i,j]
         shorti <- lshorti[i,j]
         porti <- portl+ports
@@ -577,8 +580,8 @@ for(j in 1:length(sinal)){
       longf <- ((longf/longi)-1)+1
       shortf <- 1+((shortf/shorti)-1)
       portf <- -portl*longf - ports*shortf
-      retorno[i,j] <- (porti+portf)/invest[i-1,j]
-      invest[i,j] <- (((porti+portf)/invest[i-1,j])+1)*invest[i-1,j]
+      retorno_t[i,j] <- (porti+portf)/invest_t[i-1,j]
+      invest_t[i,j] <- (((porti+portf)/invest_t[i-1,j])+1)*invest_t[i-1,j]
       tt2[i,j] <- "Saiu"
     } else{
       tt2[i,j] <- if(sinal[i-1,j] != "Fora"
@@ -591,7 +594,8 @@ for(j in 1:length(sinal)){
     }
   }
 }
-
+retornos[[p]] <- retorno_t
+names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
