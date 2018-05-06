@@ -599,24 +599,35 @@ names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-portret <- as.data.frame(matrix(rep(0,20),nrow = 20,ncol = 3))
+portret <- data.frame(matrix(rep(0,60),nrow = 20,ncol = 3))
+colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 for(j in 1:ncol(tt2)){
   for(i in 1009:nrow(tt2)){
     if(tt2[i,j] == "Abriu"){
-     portret[j,1] <- (tail(cumprod(invest[i:nrow(invest),j]),1)-1)*100
-     portret[j,2] <- sd(cumprod(invest[i:nrow(invest),j]))
-     portret[j,3] <- portret[j,1]/portret[j,2]
-     rownames(portret)[j] <- names(paresRtestedM)[j]
-     break
+      portret[j,1] <- (tail(cumprod(invest_t[i:nrow(invest_t),j]),1)-1)*100
+      portret[j,2] <- sd(cumprod(invest_t[i:nrow(invest_t),j]))
+      portret[j,3] <- portret[j,1]/portret[j,2]
+      rownames(portret)[j] <- names(paresRtestedM)[j]
+      break
+    } else{
+      portret[j,1] <- 0
+      portret[j,2] <- 0
+      portret[j,3] <- 0
+      rownames(portret)[j] <- names(paresRtestedM)[j]
+      next
     }
   }
 }
-colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
+  
   trading_return[[length(trading_return)+1]] <- portret ## Retornos Totais
   names(trading_return)[p] <- paste0("Return Trading Period ",p)
   
   } else{
     print("Finish")
+    break
   }
 }
+
+saveRDS(trading_return,"trading_return.rds")
+saveRDS(retornos,"retornos.rds")
 
