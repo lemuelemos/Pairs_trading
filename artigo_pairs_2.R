@@ -29,6 +29,8 @@ ret_port <- as.list(NULL)
 trading_return <- as.list(NULL)
 select_port <- as.list(NULL)
 retornos <- as.list(NULL)
+time_window <- as.list(NULL)
+ret_aux <- as.list(NULL)
 
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
@@ -36,6 +38,7 @@ for(p in seq_along(window_test)){
                         end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
                         else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
   nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
+  time_window[[p]] <- time(test_period)
   ### Estimando modelo
   portpairs <- list(NULL) ## List the will contain the pairs estimated
   for(k in 1:ncol(test_period)){
@@ -356,8 +359,9 @@ for(j in 1:length(Zm)){
   ############### Periodo de Trading ##################
   #####################################################
   
+  for(ii in c(1,3)){
   print("Período de Trading")
-  portsel <- sort(ret_port[[p]][,3], decreasing = T)[1:20] ## Seleect the top 20 sharp's
+  portsel <- sort(ret_port[[p]][,ii], decreasing = T)[1:20] ## Seleect the top 20 sharp's
   select_port[[p]] <- names(portsel)
   if(nrow(test_period) ==  1008){ # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
@@ -619,14 +623,23 @@ for(j in 1:ncol(tt2)){
   }
 }
   
-  trading_return[[length(trading_return)+1]] <- portret ## Retornos Totais
-  names(trading_return)[p] <- paste0("Return Trading Period ",p)
-  
+  if(ii == 1){
+  ret_aux[[1]] <- portret ## Retornos Totais
+  names(trading_return)[p] <- paste0("Return Trading Period ",p, ". The top 20 Sharp`s")
+  } else{
+  ret_aux[[2]] <- portret ## Retornos Totais
+  names(trading_return)[p] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+  }
+  trading_return[[p]] <- ret_aux
   } else{
     print("Finish")
     break
   }
+ }
 }
+
+
+#### Salvando Dados Importantes
 
 saveRDS(trading_return,"trading_return.rds")
 saveRDS(retornos,"retornos.rds")
