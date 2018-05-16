@@ -625,10 +625,10 @@ for(j in 1:ncol(tt2)){
   
   if(ii == 1){
   ret_aux[[1]] <- portret ## Retornos Totais
-  names(trading_return)[p] <- paste0("Return Trading Period ",p, ". The top 20 Sharp`s")
+  names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
   } else{
   ret_aux[[2]] <- portret ## Retornos Totais
-  names(trading_return)[p] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+  names(ret_port)[2] <- paste0("Return Trading Period ",p, ". The top 20 Return")
   }
   trading_return[[p]] <- ret_aux
   } else{
