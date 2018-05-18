@@ -31,7 +31,9 @@ select_port <- as.list(NULL)
 retornos <- as.list(NULL)
 time_window <- as.list(NULL)
 ret_aux <- as.list(NULL)
-
+threshold <- matrix(c(1,1.5,1,1,0.5,0.5,1,1.5),4,2)
+for(i in nrow(threshold)){
+  tr <- threshold[i,]
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
@@ -110,18 +112,18 @@ for(p in seq_along(window_test)){
   ## threshold's = [1,0.5]
   print(paste0("Sinal Para as Operações - threshold's = [1,0.5]. Portólio ",p))
   sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-  t <- c(1,0.5)
+  tr <- c(1,0.5)
   sinal[1,1:length(sinal)] <- "Fora"
   colnames(sinal) <- names(Zm)
   for(j in 1:length(Zm)){
     for(i in 2:nrow(Zm)){
-      if(Zm[i,j] > t[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -t[2]){
+      if(Zm[i,j] > tr[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -tr[2]){
         sinal[i,j] <- "OpenRight"
-      } else if(Zm[i,j] < -t[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < t[2]){
+      } else if(Zm[i,j] < -tr[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < tr[2]){
         sinal[i,j] <- "OpenLeft"
-      } else if(Zm[i,j] < -t[2] && sinal[i-1,j] == "OpenRight"){
+      } else if(Zm[i,j] < -tr[2] && sinal[i-1,j] == "OpenRight"){
         sinal[i,j] <- "OutRight"
-      } else if(Zm[i,j] > t[2] && sinal[i-1,j] == "OpenLeft"){
+      } else if(Zm[i,j] > tr[2] && sinal[i-1,j] == "OpenLeft"){
         sinal[i,j] <- "OutLeft"
       } else{
         sinal[i,j] <- "Fora"
@@ -419,13 +421,13 @@ sinal[1,1:length(sinal)] <- "Fora"
 colnames(sinal) <- names(Zm)
 for(j in 1:length(Zm)){
   for(i in 2:nrow(Zm)){
-    if(Zm[i,j] > t[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -t[2]){
+    if(Zm[i,j] > tr[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -tr[2]){
       sinal[i,j] <- "OpenRight"
-    } else if(Zm[i,j] < -t[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < t[2]) {
+    } else if(Zm[i,j] < -tr[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < tr[2]) {
       sinal[i,j] = "OpenLeft"
-    } else if(Zm[i,j] < -t[2] && sinal[i-1,j] == "OpenRight"){
+    } else if(Zm[i,j] < -tr[2] && sinal[i-1,j] == "OpenRight"){
       sinal[i,j] <- "OutRight"
-    } else if(Zm[i,j] > t[2] && sinal[i-1,j] == "OpenLeft"){
+    } else if(Zm[i,j] > tr[2] && sinal[i-1,j] == "OpenLeft"){
       sinal[i,j] <- "OutLeft"
     } else{
       sinal[i,j] <- "Fora"
@@ -640,7 +642,5 @@ for(j in 1:ncol(tt2)){
 
 
 #### Salvando Dados Importantes
-
-saveRDS(trading_return,"trading_return.rds")
-saveRDS(retornos,"retornos.rds")
-
+source('res_data_est.R')
+}
