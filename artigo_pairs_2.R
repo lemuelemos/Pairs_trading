@@ -37,7 +37,7 @@ for(i in nrow(threshold)){
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
-                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
+                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){print("Finish") break}
                         else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
   nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
   time_window[[p]] <- time(test_period)
@@ -110,7 +110,7 @@ for(p in seq_along(window_test)){
   ## Openright/OutRight = Operações em que o valor do resíduo é positivo
   ## OpenLeft/OutLeft = Operações em que o valor de resídou é negativo
   ## threshold's = [1,0.5]
-  print(paste0("Sinal Para as Operações - threshold's = [1,0.5]. Portólio ",p))
+  print(paste0("Sinal Para as Operações - threshold[",tr[1],",",tr[2],"]. Portólio ",p))
   sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
   tr <- c(1,0.5)
   sinal[1,1:length(sinal)] <- "Fora"
@@ -415,7 +415,7 @@ Zm <- as.data.frame(Zm) ### Tos os M's normalizados
 ## Openright/OutRight = Operações em que o valor do resíduo é positivo
 ## OpenLeft/OutLeft = Operações em que o valor de resídou é negativo
 ## threshold's = [1,0.5]
-print(paste0("Sinal Para as Operações - threshold's = [1,0.5]. Portólio ",p))
+print(paste0("Sinal Para as Operações - threshold[",tr[1],",",tr[2],"]. Portólio ",p))
 sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 sinal[1,1:length(sinal)] <- "Fora"
 colnames(sinal) <- names(Zm)
