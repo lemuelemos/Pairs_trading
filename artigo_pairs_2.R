@@ -37,7 +37,7 @@ for(i in nrow(threshold)){
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
-                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){print("Finish") break}
+                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){break}
                         else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
   nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
   time_window[[p]] <- time(test_period)
