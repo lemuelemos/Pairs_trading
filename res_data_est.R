@@ -21,6 +21,6 @@ par_estim[[2]] <- trading_return
 par_estim[[3]] <- select_port
 saveRDS(par_estim,paste0("par_estim threshold[",tr[1],",",tr[2],"].rds"))
 
-resum_results
+#resum_results
 
 

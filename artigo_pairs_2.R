@@ -32,8 +32,8 @@ retornos <- as.list(NULL)
 time_window <- as.list(NULL)
 ret_aux <- as.list(NULL)
 threshold <- matrix(c(1,1.5,1,1,0.5,0.5,1,1.5),4,2)
-for(i in nrow(threshold)){
-  tr <- threshold[i,]
+for(jj in nrow(threshold)){
+  tr <- threshold[jj,]
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
