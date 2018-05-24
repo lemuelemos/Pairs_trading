@@ -55,11 +55,11 @@ for(p in seq_along(window_test)){
       }
     }
   }
-  portpairs <- portpairs[!sapply(portpairs,is.null)] ### Retirando os valores vazios
-  portpairs <- portpairs[!sapply(portpairs, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
-  ################# Retirando os pares com o R superior a 0.5 
-  print(paste0("Retirando os pares com o R superior a 0.5. Portfólio ",p))
-  paresR <- list(NULL)
+portpairs <- portpairs[!sapply(portpairs,is.null)] ### Retirando os valores vazios
+portpairs <- portpairs[!sapply(portpairs, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
+################# Retirando os pares com o R superior a 0.5 
+print(paste0("Retirando os pares com o R superior a 0.5. Portfólio ",p))
+paresR <- list(NULL)
   for(l in 1:length(portpairs)){
     if(portpairs[[l]]$pvmr > 0.5){
       paresR[l] <- portpairs[l]
@@ -69,10 +69,10 @@ for(p in seq_along(window_test)){
   paresR <- paresR[!sapply(paresR,is.null)] ### Retirando os valores vazios
   
   ################ Realizando o teste de significância para cointegração parcial
-  print(paste0("Realizando o teste de significância para cointegração parcial. Portfólio ",p))
-  testepci <- list(NULL)
-  paresRtested <- list(NULL)
-  for(m in 1:length(paresR)){
+print(paste0("Realizando o teste de significância para cointegração parcial. Portfólio ",p))
+testepci <- list(NULL)
+paresRtested <- list(NULL)
+for(m in 1:length(paresR)){
     testepci[[m]] <- test.pci(paresR[[m]],alpha = 0.05, 
                               null_hyp = c("rw", "ar1"),
                               robust = FALSE, 

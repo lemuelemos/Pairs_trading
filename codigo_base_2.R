@@ -31,7 +31,6 @@ pasta_dos_dados <- 'BGS_CACHE'
 ativosl <- BatchGetSymbols(tickers = Ativos, first.date, last.date,
                            cache.folder = pasta_dos_dados, do.cache = TRUE,thresh.bad.data = 0.9)
 
-
 ativosw <- reshape.wide(ativosl$df.tickers) #### Changing the arrangement of the data to wide format
 dados_estimacao <- xts(ativosw$price.adjusted[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
 dados_estimacao <-  na.omit(dados_estimacao) ## Removing Missing Data
