@@ -72,29 +72,25 @@ paresR <- list(NULL)
 print(paste0("Realizando o teste de significância para cointegração parcial. Portfólio ",p))
 testepci <- list(NULL)
 paresRtested <- list(NULL)
-for(m in 1:length(paresR)){
-    testepci[[m]] <- test.pci(paresR[[m]],alpha = 0.05, 
-                              null_hyp = c("rw", "ar1"),
-                              robust = FALSE, 
-                              pci_opt_method = c("jp"))
-    names(testepci[m]) <- names(paresR)[m]
-    #print(paste0("Testando par",length(testepci)," de ",length(paresR)))
-    if(testepci[[m]]$p.value[3] <= 0.05){
-      paresRtested[m] <- paresR[m]
-      names(paresRtested)[m] <- names(paresR)[m]
-    }
+for(i in 1:length(paresR)){
+  testepci[[i]] <- which.hypothesis.pcitest(test.pci(paresR[[i]]))
+  names(testepci[i]) <- names(paresR)[i]
+  if(testepci[[i]] == "PCI"){
+    paresRtested[i] <- paresR[i]
+    names(paresRtested)[i] <- names(paresR)[i]
   }
-  paresRtested <- paresRtested[!sapply(paresRtested,is.null)] ### Retirando os valores vazios
+}
+paresRtested <- paresRtested[!sapply(paresRtested,is.null)] ### Retirando os valores vazios
   
-  ##############################################################################
+##############################################################################
   
-  ############# Estimando os Estados Ocultos
-  print(paste0("Estimando os Estados Ocultos. Portfólio ",p))
-  paresRtestedM <- list(NULL)
+############# Estimando os Estados Ocultos
+print(paste0("Estimando os Estados Ocultos. Portfólio ",p))
+paresRtestedM <- list(NULL)
   for(n in 1: length(paresRtested)){
     paresRtestedM[[n]] <- statehistory.pci(paresRtested[[n]])
     names(paresRtestedM)[n] <- names(paresRtested)[n]
-  }
+}
   
   # Variável paresRtestedM já são os pares para teste backtest
   ############### Normalizando O M
