@@ -21,7 +21,7 @@ library(quantmod)
 Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
 
 # Time Window to download the data
-first.date <- Sys.Date() - 1620 # Dados de 4 anos mais 6 meses para o período de trading
+first.date <- Sys.Date() - 540 # Dados de 4 anos mais 6 meses para o período de trading
 last.date <- Sys.Date() - 1
 
 #set folder for cache system
@@ -32,8 +32,8 @@ ativosl <- BatchGetSymbols(tickers = Ativos, first.date, last.date,
                            cache.folder = pasta_dos_dados, do.cache = TRUE,thresh.bad.data = 0.9)
 
 ativosw <- reshape.wide(ativosl$df.tickers) #### Changing the arrangement of the data to wide format
-dados_estimacao <- xts(ativosw$price.adjusted[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
-dados_estimacao <-  na.omit(dados_estimacao) ## Removing Missing Data
+dados_estimacao <- xts(ativosw$price.close[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
+dados_estimacao <-  dados_estimacao[,apply(!is.na(dados_estimacao),2,all)] ## Removing Missing Data
 periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)]-180) ### Setting the períod 
 dados_estimacao_teste <- window(dados_estimacao, start=periodo_teste[1], end=periodo_teste[2]) ### The formation períod
 Nomes <- colnames(dados_estimacao_teste)
@@ -51,6 +51,7 @@ for(i in 1:ncol(dados_estimacao_teste)){
 }
 
 pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
+pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
 ################# Retirando os pares com o R superior a 0.5 
 
 paresR <- list(NULL)
@@ -70,7 +71,7 @@ for(i in 1:length(paresR)){
   testepci[[i]] <- test.pci(paresR[[i]],alpha = 0.05, 
                             null_hyp = c("rw", "ar1"),
                             robust = FALSE, 
-                            pci_opt_method = c("jp", "twostep"))
+                            pci_opt_method = c("jp"))
   names(testepci[i]) <- names(paresR)[i]
   if(testepci[[i]]$p.value[3] <= 0.05){
     paresRtested[i] <- paresR[i]
@@ -342,13 +343,13 @@ for(f in 1:length(invest)){
 }
 
 portret <- t(portret) ## Retornos Totais
-portsel <- sort(portret[,1], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
+portsel <- sort(portret[,3], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 portret1 <- portret
 
 ###################### trading Period ###############
-periodo_trading <- c(time(dados_estimacao)[nrow(dados_estimacao)-180],time(dados_estimacao)[nrow(dados_estimacao)])
-dados_brutos <- window(dados_estimacao, start=periodo_trading[1], end=periodo_trading[2])
+#periodo_trading <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)])
+dados_brutos <- dados_estimacao
 parestrade <-as.list(NULL)
 for(j in 1:length(portsel)){
   parestrade[[j]] <- cbind(dados_brutos[,grep(str_sub(names(portsel)[j],end=8),names(dados_brutos))],
@@ -490,7 +491,7 @@ shortf <- as.vector(NULL)
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 for(j in 1:length(sinal)){
   for(i in 2:nrow(sinal)){
-    invest[i,j] <- invest[i-1,j]
+    #invest[i,j] <- invest[i-1,j]
     if(sinal[i,j] == "OpenRight" 
        && sinal[i-1,j] == "Fora"
        && i != nrow(sinal)
@@ -580,15 +581,26 @@ for(j in 1:length(sinal)){
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-
-portret <- as.data.frame(matrix(data = rep(0,60),ncol = ncol(Zm),nrow = 3))
-for(j in 1:length(invest)){
-  portret[1,j] <- (invest[nrow(invest),j]-1)*100
-  portret[2,j] <- sd(invest[,j])
-  portret[3,j] <- portret[1,j]/portret[2,j]
-  colnames(portret)[j] <- names(paresRtestedM)[j]
+portret <- data.frame(matrix(rep(0,60),nrow = 20,ncol = 3))
+colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
+for(j in 1:ncol(tt2)){
+  for(i in (nrow(dados_estimacao_teste)+1):nrow(tt2)){
+    if(tt2[i,j] == "Abriu"){
+      portret[j,1] <- (tail(cumprod(invest[i:nrow(invest),j]),1)-1)*100
+      portret[j,2] <- sd(cumprod(invest[i:nrow(invest),j]))
+      portret[j,3] <- portret[j,1]/portret[j,2]
+      rownames(portret)[j] <- names(paresRtestedM)[j]
+      break
+    } else{
+      portret[j,1] <- 0
+      portret[j,2] <- 0
+      portret[j,3] <- 0
+      rownames(portret)[j] <- names(paresRtestedM)[j]
+      next
+    }
+  }
 }
 
-portret <- t(portret) ## Retornos Totais
+#portret <- t(portret) ## Retornos Totais
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 
