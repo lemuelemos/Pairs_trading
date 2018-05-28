@@ -31,14 +31,17 @@ select_port <- as.list(NULL)
 retornos <- as.list(NULL)
 time_window <- as.list(NULL)
 ret_aux <- as.list(NULL)
-threshold <- matrix(c(1,1.5,1,1,0.5,0.5,1,1.5),4,2)
+threshold <- matrix(c(1,1.5,1,1.5,0.5,0.5,1,1),4,2)
+formation_windown <- c(251,503,1007)
+names(formation_windown) <- c("1Y","2Y","4Y")
+for(pp in 1:3){
 for(kk in 1:nrow(threshold)){
   tr <- threshold[kk,]
 for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
-                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){break}
-                        else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
+                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
+                        else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
   nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
   time_window[[p]] <- time(test_period)
   ### Estimando modelo
@@ -362,7 +365,7 @@ for(j in 1:length(Zm)){
   print("Período de Trading")
   portsel <- sort(ret_port[[p]][,ii], decreasing = T)[1:20] ## Seleect the top 20 sharp's
   select_port[[p]] <- names(portsel)
-  if(nrow(test_period) ==  1008){ # testing if the window is complete
+  if(nrow(test_period) ==  formation_windown[pp]+1){ # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
                            end = time(test_period)[nrow(test_period)]+178) 
@@ -606,7 +609,7 @@ names(invest) <- names(paresRtested) ### Nomeando os Pares
 portret <- data.frame(matrix(rep(0,60),nrow = 20,ncol = 3))
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 for(j in 1:ncol(tt2)){
-  for(i in 1009:nrow(tt2)){
+  for(i in (formation_windown[pp]+2):nrow(tt2)){
     if(tt2[i,j] == "Abriu"){
       portret[j,1] <- (tail(cumprod(invest_t[i:nrow(invest_t),j]),1)-1)*100
       portret[j,2] <- sd(cumprod(invest_t[i:nrow(invest_t),j]))
@@ -641,4 +644,11 @@ for(j in 1:ncol(tt2)){
 
 #### Salvando Dados Importantes
 source('res_data_est.R')
+  }
 }
+
+
+
+
+
+
