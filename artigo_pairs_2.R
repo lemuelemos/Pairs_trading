@@ -384,7 +384,7 @@ for(j in 1:length(Zm)){
   for(j in 1:length(parestrade)){
   pares2[[j]] <- fit.pci(parestrade[[j]][,1],parestrade[[j]][,2], 
                          pci_opt_method=c("jp"),
-                         par_model=c("par","ar1","rw"),
+                         par_model=c("par"),
                          lambda=0,robust=FALSE,nu=5,include_alpha=FALSE)
   names(pares2)[length(pares2)] <- names(portsel)[j]
 }
