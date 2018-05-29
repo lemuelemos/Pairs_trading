@@ -100,7 +100,7 @@ paresRtestedM <- list(NULL)
   print(paste0("Normalizando O M. Portfólio",p))
   Zm <- as.list(NULL)
   for(o in 1:length(paresRtestedM)){
-    Zm[[o]] <- paresRtestedM[[o]]$M/paresRtested[[o]]$sigma_M.se
+    Zm[[o]] <- paresRtestedM[[o]]$M/sd(paresRtested[[o]]$M)
     names(Zm)[o] <- names(paresRtestedM)[o]
   }
   Zm <- as.data.frame(Zm) ### Tos os M's normalizados
@@ -406,7 +406,7 @@ for(i in 1: length(paresRtested)){
 
 Zm <- as.list(NULL)
 for(i in 1:length(paresRtestedM)){
-  Zm[[i]] <- paresRtestedM[[i]]$M/paresRtested[[i]]$sigma_M.se
+  Zm[[i]] <- paresRtestedM[[i]]$M/sd(paresRtested[[i]]$M)
   names(Zm)[i] <- names(paresRtestedM)[i]
 }
 
