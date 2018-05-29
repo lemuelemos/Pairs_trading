@@ -26,7 +26,7 @@ Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
 
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-no_cores <- detectCores() 
+no_cores <- detectCores()
 cl <- makeCluster(no_cores)
 for(p in 1){
   test_period <- window(ibrx_2008_2017_70,
