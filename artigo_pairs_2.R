@@ -388,8 +388,9 @@ for(j in 1:length(Zm)){
                          lambda=0,robust=FALSE,nu=5,include_alpha=FALSE)
   names(pares2)[length(pares2)] <- names(portsel)[j]
 }
-
+  
   pares2 <- pares2[!sapply(pares2,is.null)] ### Retirando os valores vazios
+  pares2 <- pares2[!sapply(pares2, function(x) is.na(x$rho.se))]
   paresRtested <- list(NULL)
   paresRtested <- pares2
   
@@ -606,7 +607,7 @@ names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-portret <- data.frame(matrix(rep(0,60),nrow = 20,ncol = 3))
+portret <- data.frame(matrix(rep(0,(lenght(pares2)*3),nrow = lenght(pares2)),ncol = 3))
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 for(j in 1:ncol(tt2)){
   for(i in (formation_windown[pp]+2):nrow(tt2)){
