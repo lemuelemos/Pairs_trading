@@ -100,7 +100,7 @@ paresRtestedM <- list(NULL)
   print(paste0("Normalizando O M. Portfólio",p))
   Zm <- as.list(NULL)
   for(o in 1:length(paresRtestedM)){
-    Zm[[o]] <- paresRtestedM[[o]]$M/sd(paresRtested[[o]]$M)
+    Zm[[o]] <- paresRtestedM[[o]]$M/sd(paresRtestedM[[o]]$M)
     names(Zm)[o] <- names(paresRtestedM)[o]
   }
   Zm <- as.data.frame(Zm) ### Tos os M's normalizados
@@ -407,7 +407,7 @@ for(i in 1: length(paresRtested)){
 
 Zm <- as.list(NULL)
 for(i in 1:length(paresRtestedM)){
-  Zm[[i]] <- paresRtestedM[[i]]$M/sd(paresRtested[[i]]$M)
+  Zm[[i]] <- paresRtestedM[[i]]$M/sd(paresRtestedM[[i]]$M)
   names(Zm)[i] <- names(paresRtestedM)[i]
 }
 
@@ -607,7 +607,7 @@ names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
 names(invest) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-portret <- data.frame(matrix(rep(0,(lenght(pares2)*3),nrow = lenght(pares2)),ncol = 3))
+portret <- data.frame(matrix(rep(0,(length(pares2)*3),nrow = lenght(pares2)),ncol = 3))
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 for(j in 1:ncol(tt2)){
   for(i in (formation_windown[pp]+2):nrow(tt2)){
