@@ -382,7 +382,7 @@ for(i in 1: length(paresRtested)){
 
 Zm <- as.list(NULL)
 for(i in 1:length(paresRtestedM)){
-  Zm[[i]] <- paresRtestedM[[i]]$M/paresRtested[[i]]$sigma_M.se
+  Zm[[i]] <- paresRtestedM[[i]]$M/sd(paresRtestedM[[i]]$M)
   names(Zm)[i] <- names(paresRtestedM)[i]
 }
 
