@@ -23,10 +23,12 @@ rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70")) ## remove objects that will not
 Nomes <- colnames(ibrx_2008_2017_70) ## Taking the names of equity's
 Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
-
+threshold <- matrix(c(1,1.5,1,1.5,0.5,0.5,1,1),4,2)
 
 ### Setting the window of estimation
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
+for(kk in 1){
+  tr <- threshold[kk,]
 no_cores <- detectCores()
 cl <- makeCluster(no_cores)
 for(p in 1){
@@ -46,7 +48,9 @@ for(p in 1){
   pares <- unlist(pares, recursive = F)
   pares <- pares[!sapply(pares,is.null)]
   pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
-  names(pares) <- paste0(str_sub(names(pares), 1,6),"vs ",str_sub(names(pares), 8,13))
+  names(pares) <- gsub("TIET11vs","TIET11 vs",
+                       paste0(str_sub(names(pares), 1,6),"vs ", 
+                              str_sub(names(pares), 8,13)))
 }
 pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
@@ -66,9 +70,26 @@ paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
 # Variável paresRtestedM já são os pares para teste backtest
 ############### Normalizando O M
 Zm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
+Zm <- as.data.frame(Zm)
+colnames(Zm) <- gsub("\\."," ",names(Zm))
 
-
-
-
-
-
+### sign of operations
+sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+sinal[1,1:length(sinal)] <- "Fora"
+colnames(sinal) <- names(Zm)
+for(j in 1:length(Zm)){
+  for(i in 2:nrow(Zm)){
+    if(Zm[i,j] > tr[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -tr[2]){
+      sinal[i,j] <- "OpenRight"
+    } else if(Zm[i,j] < -tr[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < tr[2]){
+      sinal[i,j] <- "OpenLeft"
+    } else if(Zm[i,j] < -tr[2] && sinal[i-1,j] == "OpenRight"){
+      sinal[i,j] <- "OutRight"
+    } else if(Zm[i,j] > tr[2] && sinal[i-1,j] == "OpenLeft"){
+      sinal[i,j] <- "OutLeft"
+    } else{
+      sinal[i,j] <- "Fora"
+    }
+  }
+}
+}
