@@ -6,7 +6,6 @@ library(dplyr)
 library(timeSeries)
 
 ##### Import data and cleaning NA's
-
 ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
 
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
