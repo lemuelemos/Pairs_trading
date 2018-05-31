@@ -6,7 +6,7 @@ library(stringr)
 library(dplyr)
 library(timeSeries)
 ##### Import data and cleaning NA's
-
+source('cpp_codes.R')
 ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
 
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
@@ -36,6 +36,7 @@ for(p in 1){
                         start=time(ibrx_2008_2017_70)[window_test[p]],
                         end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+1007])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
                         else{time(ibrx_2008_2017_70)[window_test[p]+1007]})
+  period <- time(test_period)
   test_period <- as.data.frame(test_period)
   
   ### Estimating pairs
@@ -56,40 +57,29 @@ pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 #### Taking the pairs with R square greater than 0.5
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
-
+rm(pares)
 ### Testing partial Cointegration
 cl <- makeCluster(no_cores)
 clusterExport(cl, "paresR")
 clusterEvalQ(cl, library(partialCI))
 paresRtested <- paresR[parSapply(cl,paresR, FUN = function(x) which.hypothesis.pcitest(test.pci(x))=="PCI")]
 stopCluster(cl)
-
+paresR
 ### Estimation of ocult states
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
-
+rm(paresRtested)
 # Variável paresRtestedM já são os pares para teste backtest
 ############### Normalizando O M
 Zm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
 Zm <- as.data.frame(Zm)
 colnames(Zm) <- gsub("\\."," ",names(Zm))
-
+rm(paresRtestedM)
 ### sign of operations
-sinal <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-sinal[1,1:length(sinal)] <- "Fora"
+sinal <- matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))
+sinal[1,1:ncol(sinal)] <- "Fora"
+sinal <- sncalc(ncol(Zm),nrow(Zm),as.matrix(Zm), tr=tr, sinal=sinal)
+sinal<- as.data.frame(sinal) 
 colnames(sinal) <- names(Zm)
-for(j in 1:length(Zm)){
-  for(i in 2:nrow(Zm)){
-    if(Zm[i,j] > tr[1] && sinal[i-1,j] != "OpenLeft" || sinal[i-1,j] == "OpenRight" && Zm[i,j] > -tr[2]){
-      sinal[i,j] <- "OpenRight"
-    } else if(Zm[i,j] < -tr[1] && sinal[i-1,j] != "OpenRight" || sinal[i-1,j] == "OpenLeft" && Zm[i,j] < tr[2]){
-      sinal[i,j] <- "OpenLeft"
-    } else if(Zm[i,j] < -tr[2] && sinal[i-1,j] == "OpenRight"){
-      sinal[i,j] <- "OutRight"
-    } else if(Zm[i,j] > tr[2] && sinal[i-1,j] == "OpenLeft"){
-      sinal[i,j] <- "OutLeft"
-    } else{
-      sinal[i,j] <- "Fora"
-    }
-  }
-}
+sinal %>% mutate_if(is.factor,as.character) -> sinal
+as.xts(sinal, order.by = time(test_period))
 }
