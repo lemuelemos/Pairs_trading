@@ -5,8 +5,10 @@ library(xts)
 library(stringr)
 library(dplyr)
 library(timeSeries)
+library(plyr)
 ##### Import data and cleaning NA's
-source('cpp_codes.R')
+#source('cpp_codes.R')
+sourceCpp("cpp_codes.cpp")
 ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
 
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
@@ -64,10 +66,12 @@ clusterExport(cl, "paresR")
 clusterEvalQ(cl, library(partialCI))
 paresRtested <- paresR[parSapply(cl,paresR, FUN = function(x) which.hypothesis.pcitest(test.pci(x))=="PCI")]
 stopCluster(cl)
-paresR
+rm(paresR)
 ### Estimation of ocult states
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
-rm(paresRtested)
+betas <- ldply(paresRtested, function(x) x$beta)
+#paresRtested[[j]]$beta
+#rm(paresRtested)
 # Variável paresRtestedM já são os pares para teste backtest
 ############### Normalizando O M
 Zm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
@@ -81,5 +85,26 @@ sinal <- sncalc(ncol(Zm),nrow(Zm),as.matrix(Zm), tr=tr, sinal=sinal)
 sinal<- as.data.frame(sinal) 
 colnames(sinal) <- names(Zm)
 sinal %>% mutate_if(is.factor,as.character) -> sinal
-as.xts(sinal, order.by = time(test_period))
+#as.xts(sinal, order.by = time(test_period))
+############# Return Calc
+
+parestrade <- list(NULL)
+for(j in 1:length(sinal)){
+  parestrade[[j]] <- cbind(test_period[,str_sub(names(sinal)[j],end=6)],
+                           test_period[,str_sub(names(sinal)[j],start=-6)])
+  names(parestrade)[j] <- names(sinal)[j]
+  colnames(parestrade[[j]]) <- cbind(str_sub(names(sinal)[j],end=6),
+                                     str_sub(names(sinal)[j],start=-6))
 }
+
+par_est <- data.frame(NULL)
+for(j in length(parestrade)){
+  par_est <- parestrade[[j]]
+  
+}
+
+#returcalc(as.matrix(sinal),as.matrix(par_est))
+
+}
+
+
