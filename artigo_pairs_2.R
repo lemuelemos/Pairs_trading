@@ -249,6 +249,7 @@ for(j in 1:length(Zm)){
               retorno[k,j] <- (porti+portf)/invest[k-1,j]
               invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
               ttf[k,j] <- "Saiu"
+              break
             }
           }
         } else{
@@ -271,6 +272,7 @@ for(j in 1:length(Zm)){
               retorno[k,j] <- (porti+portf)/invest[k-1,j]
               invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
               ttf[k,j] <- "Saiu"
+              break
             }
           } 
         } 
@@ -303,6 +305,7 @@ for(j in 1:length(Zm)){
               retorno[k,j] <- (porti+portf)/invest[k-1,j]
               invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
               ttf[k,j] <- "Saiu"
+              break
             }
           } 
         } else{
@@ -325,6 +328,7 @@ for(j in 1:length(Zm)){
               retorno[k,j] <- (porti+portf)/invest[k-1,j]
               invest[k,j] <- (((porti+portf)/invest[k-1,j])+1)*invest[k-1,j]
               ttf[k,j] <- "Saiu"
+              break
             }
           } 
         } 
