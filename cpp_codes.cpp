@@ -18,15 +18,64 @@ CharacterMatrix sncalc(int ncol, int nrow, NumericMatrix Zm, NumericVector tr,Ch
 
 // [[Rcpp::export]]
 
-  NumericMatrix returcalc(CharacterMatrix sinal, NumericMatrix par){
-  NumericMatrix invest;
-  NumericMatrix retorno;
-  CharacterMatrix t_oper;
-  int r = sinal.nrow(); 
-  int c = sinal.ncol();
-  for(int j=0; j < c; j++){
-    for(int i=1; i < r; i++){
-      invest(i,j) = invest(i-1,j);
+NumericVector returcalc(CharacterVector sinal, NumericMatrix par, double betas,
+                        NumericVector invest){
+  int r = sinal.size(); 
+  //int c = sinal.ncol();
+  NumericVector t_oper(r);
+  NumericVector retorno(r);
+  int k = 0;
+  double plongri = 0;
+  double pshortri = 0;
+  double plongrf = 0;
+  double pshortrf = 0;
+  double plongl = 0;
+  double pshortl = 0;
+  double portli = 0;
+  double portsi = 0;
+  double portlf = 0;
+  double portsf = 0;
+  double porti = 0;
+  double portf = 0;
+      for(int i = 1; i < r; i++){
+      if(i>k){
+        invest(i) = invest(i-1);
+      if((sinal(i) == "OpenRight" && sinal(i-1) == "Fora" && i != r)
+           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutLeft" && i != r)
+           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutRight" && i != r)){
+           plongri = par(i,1);
+           pshortri = par(i,0);
+        if((plongri*betas/pshortri) < 1){
+          portli = -((plongri*betas/pshortri)*invest(i-1));
+          portsi = invest(i-1);
+          porti = portli+portsi;
+          //t_oper(i,j) = "Abriu";
+          for(k = i; k < r; k++){
+            plongrf = par(k,1);
+            pshortrf = par(k,0);
+            portlf = (plongrf/plongri)*portli;
+            portsf = (pshortrf/pshortri)*portsi;
+            portf = (portli-portlf)+(portsi-portsf);
+            //retorno(k) = portf/invest(i);
+            invest(k) = ((portf/invest(i))+1)*invest(i);
+            if((sinal(k) == "OutRight" && sinal(k-1) == "OpenRight")
+                 || (k == r && sinal(k-1) == "OpenRight")){
+              plongrf = par(k,1);
+              pshortrf = par(k,0);
+              portlf = (plongrf/plongri)*portli;
+              portsf = (pshortrf/pshortri)*portsi;
+              portf = (portli-portlf)+(portsi-portsf);
+              retorno(k) = portf/invest(i);
+              invest(k) = (retorno(k)+1)*invest(i);
+              break;
+            }
+          }
+        } else{
+          
+        }
+      }
+     }
     }
-  }
+  return invest;
 }
+

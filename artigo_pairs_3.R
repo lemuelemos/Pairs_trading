@@ -6,6 +6,7 @@ library(stringr)
 library(dplyr)
 library(timeSeries)
 library(plyr)
+library(Rcpp)
 ##### Import data and cleaning NA's
 #source('cpp_codes.R')
 sourceCpp("cpp_codes.cpp")
@@ -64,7 +65,8 @@ rm(pares)
 cl <- makeCluster(no_cores)
 clusterExport(cl, "paresR")
 clusterEvalQ(cl, library(partialCI))
-paresRtested <- paresR[parSapply(cl,paresR, FUN = function(x) which.hypothesis.pcitest(test.pci(x))=="PCI")]
+paresRtested <- paresR[parSapply(cl,paresR, 
+                                 FUN = function(x) which.hypothesis.pcitest(test.pci(x))=="PCI")]
 stopCluster(cl)
 rm(paresR)
 ### Estimation of ocult states
@@ -96,13 +98,14 @@ for(j in 1:length(sinal)){
   colnames(parestrade[[j]]) <- cbind(str_sub(names(sinal)[j],end=6),
                                      str_sub(names(sinal)[j],start=-6))
 }
-
+invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 par_est <- data.frame(NULL)
-for(j in length(parestrade)){
+for(j in 1){
   par_est <- parestrade[[j]]
-  
+  invest[,j] <- returcalc(as.matrix(sinal[,j]),
+            as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
 }
-
+head(invest[,j],50)
 #returcalc(as.matrix(sinal),as.matrix(par_est))
 
 }
