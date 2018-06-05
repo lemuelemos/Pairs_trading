@@ -43,11 +43,12 @@ List returcalc(CharacterVector sinal, NumericMatrix par, double betas,
   for(int i = 1; i < r; i++){
     if(i>k){
       invest(i) = invest(i-1);
-      if((sinal(i) == "OpenRight" && sinal(i-1) == "Fora" && i != r)
-           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutLeft" && i != r)
-           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutRight" && i != r)){
+    }
+      if((sinal(i) == "OpenRight" && sinal(i-1) == "Fora" && i != r && i > k)
+           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutLeft" && i != r && i > k)
+           || (sinal(i) == "OpenRight" && sinal(i-1) == "OutRight" && i != r && i > k)){
            plongri = par(i,1);
-        pshortri = par(i,0);
+           pshortri = par(i,0);
         if(((plongri*betas)/pshortri) < 1){
           portli = -(((plongri*betas)/pshortri)*invest(i-1));
           portsi = invest(i-1);
@@ -100,10 +101,10 @@ List returcalc(CharacterVector sinal, NumericMatrix par, double betas,
             }
           }
         }
-      } else if((sinal(i) == "OpenLeft" && sinal(i-1) == "Fora" && i != r)
-                  || (sinal(i) == "OpenLeft" && sinal(i-1) == "OutRight" && i != r)
-                  || (sinal(i) == "OpenLeft" && sinal(i-1) == "OutLeft" && i != r)){
-                  plongli = par(i,0);
+      } else if((sinal(i) == "OpenLeft" && sinal(i-1) == "Fora" && i != r && i > k)
+                  || (sinal(i) == "OpenLeft" && sinal(i-1) == "OutRight" && i != r && i > k)
+                  || (sinal(i) == "OpenLeft" && sinal(i-1) == "OutLeft" && i != r && i > k)){
+        plongli = par(i,0);
         pshortli = par(i,1);
         if(((pshortli*betas)/plongli) < 1){
           portli = -invest(i-1);
@@ -161,10 +162,11 @@ List returcalc(CharacterVector sinal, NumericMatrix par, double betas,
       } else{
         if(i == k){
           t_oper(i) = "Saiu";
-        } else {
+        } else if(i < k){
           t_oper(i) = "Aberto";
+        } else{
+          t_oper(i) = "Fora";
         }
-      }
     }
   }
   List results;

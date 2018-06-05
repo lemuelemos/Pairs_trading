@@ -53,7 +53,7 @@ for(pp in 1:3){
                ,p,". Period from ",
                min(time_window[[p]]), " to ",max(time_window[[p]])))
   
-  no_cores <- detectCores()
+  no_cores <- detectCores() 
   cl <- makeCluster(no_cores)
   clusterExport(cl, "test_period_est")
   clusterEvalQ(cl, library(partialCI))
@@ -211,7 +211,6 @@ sinal %>% mutate_if(is.factor,as.character) -> sinal
 invest_t <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-tt2[1,1:ncol(tt2)] <- "Fora"
 results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
@@ -222,6 +221,7 @@ for(j in 1:length(parestrade)){
   retorno_t[,j] <- results$retorno
   tt2[,j] <- results$tt
 }
+tt2[1,1:ncol(tt2)] <- "Fora"
 colnames(invest_t) <- names(parestrade)
 colnames(retorno_t) <- names(parestrade)
 colnames(tt2) <- names(parestrade)
