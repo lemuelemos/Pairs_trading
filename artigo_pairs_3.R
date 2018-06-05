@@ -50,6 +50,8 @@ for(pp in 1:3){
       time_window[[p]] <- time(test_period)
   
   ### Estimating pairs
+  no_cores <- detectCores()
+  cl <- makeCluster(no_cores)
   clusterExport(cl, "test_period")
   clusterEvalQ(cl, library(partialCI))
   pares <- parLapply(cl,test_period,function(x) apply(test_period,2, 
