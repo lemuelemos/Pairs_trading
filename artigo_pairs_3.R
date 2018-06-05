@@ -154,7 +154,7 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 
 ret_port[[length(ret_port)+1]] <- portret ## Retornos Totais
 names(ret_port)[p] <- paste0("Return Formation Period ",p)
-break
+
 #####################################################
 ############### Periodo de Trading ##################
 #####################################################
@@ -211,18 +211,19 @@ sinal %>% mutate_if(is.factor,as.character) -> sinal
 invest_t <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+tt2[1,1:ncol(tt2)] <- "Fora"
 results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
   par_est <- parestrade[[j]]
   results <- returcalc(as.matrix(sinal[,j]),
-                       as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
-  invest[,j] <- results[[1]]
-  retorno[,j] <- results[[2]]
-  tt2[,j] <- results[[2]]
+                       as.matrix(par_est),betas = betas$beta_[j],invest = invest_t[,j])
+  invest_t[,j] <- results$invest
+  retorno_t[,j] <- results$retorno
+  tt2[,j] <- results$tt
 }
-colnames(invest) <- names(parestrade)
-colnames(retorno) <- names(parestrade)
+colnames(invest_t) <- names(parestrade)
+colnames(retorno_t) <- names(parestrade)
 colnames(tt2) <- names(parestrade)
 
 
@@ -249,7 +250,7 @@ for(f in 1:length(invest_t)){
 }
 
 if(ii == 1){
-  ret_aux[[1]] <- portret ## Retornos Totais
+  ret_aux[[1]] <- t(portret) ## Retornos Totais
   names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
 } else{
   ret_aux[[2]] <- portret ## Retornos Totais
