@@ -1,4 +1,5 @@
 library(doParallel)
+library(plyr)
 library(partialCI)
 library(readxl)
 library(xts)
@@ -50,7 +51,7 @@ for(pp in 1:3){
   ### Estimating pairs
   print(paste0("Estimating the pairs from portfolio "
                ,p,". Period from ",
-               min(time_window[[p]]), " to ",min(time_window[[p]])))
+               min(time_window[[p]]), " to ",max(time_window[[p]])))
   
   no_cores <- detectCores()
   cl <- makeCluster(no_cores)
@@ -120,7 +121,7 @@ for(j in 1:length(sinal)){
 
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+ttf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
@@ -132,7 +133,8 @@ for(j in 1:length(parestrade)){
   ttf[,j] <- results[[2]]
 }
 colnames(invest) <- names(parestrade)
-
+colnames(retorno) <- names(parestrade)
+colnames(ttf) <- names(parestrade)
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 print(paste0("Calculating return and sharpe. Portfolio ",p))
@@ -152,7 +154,7 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 
 ret_port[[length(ret_port)+1]] <- portret ## Retornos Totais
 names(ret_port)[p] <- paste0("Return Formation Period ",p)
-
+break
 #####################################################
 ############### Periodo de Trading ##################
 #####################################################
@@ -207,36 +209,43 @@ sinal %>% mutate_if(is.factor,as.character) -> sinal
 
 ############# Return Calc
 invest_t <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-par_est <- data.frame(NULL)
-for(j in 1:length(parestrade)){
-  par_est <- parestrade[[j]]
-  invest_t[,j] <- returcalci(as.matrix(sinal[,j]),
-                           as.matrix(par_est),betas = betas[j,2],invest = invest_t[,j])
-}
-colnames(invest_t) <- names(parestrade)
-
-invest2 <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
   par_est <- parestrade[[j]]
-  retorno_t[,j] <- returcalcr(as.matrix(sinal[,j]),
-                            as.matrix(par_est),betas = betas$beta_[j],invest = invest2[,j])
+  results <- returcalc(as.matrix(sinal[,j]),
+                       as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
+  invest[,j] <- results[[1]]
+  retorno[,j] <- results[[2]]
+  tt2[,j] <- results[[2]]
 }
-colnames(retorno_t) <- names(parestrade)
+colnames(invest) <- names(parestrade)
+colnames(retorno) <- names(parestrade)
+colnames(tt2) <- names(parestrade)
 
-retornos[[p]] <- retorno_t
-names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
-names(invest_t) <- names(paresRtested) ### Nomeando os Pares
+
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
 for(f in 1:length(invest_t)){
-  portret[1,f] <- ((invest_t[nrow(invest_t),f]/invest_t[1,f])-1)*100
+  for(i in (formation_windown[pp]+2):nrow(tt2)){
+    if(tt2[i,j] == "Abriu"){
+  portret[1,f] <- ((invest_t[nrow(invest_t),f]/invest_t[i,f])-1)*100
   portret[2,f] <- sd(invest_t[,f])
   portret[3,f] <- portret[1,f]/portret[2,f]
   colnames(portret)[f] <- names(parestrade)[f]
+  break
+    } else{
+      portret[j,1] <- 0
+      portret[j,2] <- 0
+      portret[j,3] <- 0
+      rownames(portret)[j] <- names(paresRtestedM)[j]
+      next
+    }
+  }
 }
 
 if(ii == 1){
