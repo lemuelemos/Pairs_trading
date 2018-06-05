@@ -48,7 +48,7 @@ for(pp in 1:3){
                             else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
       nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
       time_window[[p]] <- time(test_period)
-  
+      test_period <- as.data.frame(test_period)
   ### Estimating pairs
   no_cores <- detectCores()
   cl <- makeCluster(no_cores)
