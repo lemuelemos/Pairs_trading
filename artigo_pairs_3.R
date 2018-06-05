@@ -5,7 +5,6 @@ library(xts)
 library(stringr)
 library(dplyr)
 library(timeSeries)
-library(plyr)
 library(Rcpp)
 ##### Import data and cleaning NA's
 #source('cpp_codes.R')
