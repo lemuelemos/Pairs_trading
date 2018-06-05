@@ -46,15 +46,18 @@ for(pp in 1:3){
                             start=time(ibrx_2008_2017_70)[window_test[p]],
                             end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
                             else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
-      nport <- ncol(ibrx_2008_2017_70)*(ncol(ibrx_2008_2017_70)-1)
       time_window[[p]] <- time(test_period)
-      test_period <- as.data.frame(test_period)
+      test_period_est <- as.data.frame(test_period)
   ### Estimating pairs
+  print(paste0("Estimating the pairs from portfolio "
+               ,p,". Period from ",
+               min(time_window[[p]]), " to ",min(time_window[[p]])))
+  
   no_cores <- detectCores()
   cl <- makeCluster(no_cores)
-  clusterExport(cl, "test_period")
+  clusterExport(cl, "test_period_est")
   clusterEvalQ(cl, library(partialCI))
-  pares <- parLapply(cl,test_period,function(x) apply(test_period,2, 
+  pares <- parLapply(cl,test_period_est,function(x) apply(test_period_est,2, 
                                                       function(y) if(x!=y){fit.pci(x,y)}))
   stopCluster(cl)
   
@@ -68,10 +71,12 @@ pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 
 #### Taking the pairs with R square greater than 0.5
+print(paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
 rm(pares)
 
 ### Testing partial Cointegration
+print(paste0("Testing for partial coitegration. Portfolio ",p))
 cl <- makeCluster(no_cores)
 clusterExport(cl, "paresR")
 clusterEvalQ(cl, library(partialCI))
@@ -81,17 +86,20 @@ stopCluster(cl)
 rm(paresR)
 
 ### Estimation of ocult states
+print(paste0("Estimation of ocult states. Portfolio ",p))
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
 betas <- ldply(paresRtested, function(x) x$beta)
 #rm(paresRtested)
 
 ############### Normalizando O M
+print(paste0("Normalizing the M. Portfolio",p))
 Zm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
 Zm <- as.data.frame(Zm)
 colnames(Zm) <- gsub("\\."," ",names(Zm))
 rm(paresRtestedM)
 
 ### sign of operations
+print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
 sinal <- matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))
 sinal[1,1:ncol(sinal)] <- "Fora"
 sinal <- sncalc(ncol(Zm),nrow(Zm),as.matrix(Zm), tr=tr, sinal=sinal)
@@ -101,6 +109,7 @@ sinal %>% mutate_if(is.factor,as.character) -> sinal
 #as.xts(sinal, order.by = time(test_period))
 
 ############# Return Calc
+print(paste0("Return Calc. Portfolio",p))
 parestrade <- list(NULL)
 for(j in 1:length(sinal)){
   parestrade[[j]] <- cbind(test_period[,str_sub(names(sinal)[j],end=6)],
@@ -111,26 +120,23 @@ for(j in 1:length(sinal)){
 }
 
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
   par_est <- parestrade[[j]]
-  invest[,j] <- returcalci(as.matrix(sinal[,j]),
+  results <- returcalc(as.matrix(sinal[,j]),
             as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
+  invest[,j] <- results[[1]]
+  retorno[,j] <- results[[2]]
+  ttf[,j] <- results[[2]]
 }
 colnames(invest) <- names(parestrade)
 
-invest2 <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-par_est <- data.frame(NULL)
-for(j in 1:length(parestrade)){
-  par_est <- parestrade[[j]]
-  retorno[,j] <- returcalcr(as.matrix(sinal[,j]),
-                           as.matrix(par_est),betas = betas$beta_[j],invest = invest2[,j])
-}
-colnames(retorno) <- names(parestrade)
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-print(paste0("Calculando os Retornos Totais. Portfólio ",p))
+print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
 for(f in 1:length(invest)){
   portret[1,f] <- ((invest[nrow(invest),f]/invest[1,f])-1)*100
@@ -152,7 +158,7 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 ############### Periodo de Trading ##################
 #####################################################
 for(ii in c(1,3)){
-  print("Período de Trading")
+  print("Trading Period")
   portsel <- sort(ret_port[[p]][,ii], decreasing = T)[1:20] ## Seleect the top 20 sharp's
   select_port[[p]] <- names(portsel) # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
@@ -160,7 +166,7 @@ for(ii in c(1,3)){
                             end = time(test_period)[nrow(test_period)]+175)
     
 ############# Estimating the pairs ################
-print("Estimando os Pares")
+print("Estimating the pairs")
 parestrade <-as.list(NULL)
 for(j in 1:length(portsel)){
   parestrade[[j]] <- cbind(trading_period[,grep(str_sub(names(portsel)[j],end=6),names(trading_period))],
@@ -169,29 +175,30 @@ for(j in 1:length(portsel)){
 }
 
 ### Estimating pairs
+cl <- makeCluster(no_cores)
 clusterExport(cl, "parestrade")
 clusterEvalQ(cl, library(partialCI))
 pares <- parLapply(cl,parestrade,function(x) fit.pci(x[,1],x[,2]))
 stopCluster(cl)
 
-pares <- unlist(pares, recursive = F)
 pares <- pares[!sapply(pares,is.null)]
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
 
 #### Estimating ocult states
+print(paste0("Estimation of ocult states. Portfolio ",p))
 paresRtested <- list(NULL)
 paresRtested <- pares
-
-### Estimation of ocult states
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
 betas <- ldply(paresRtested, function(x) x$beta)
 #rm(paresRtested)
 
 ### Norm M's
+print(paste0("Normalizing the M. Portfolio",p))
 Zm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
 Zm <- as.data.frame(Zm)
 
 ### sign of operations
+print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
 sinal <- matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm))
 sinal[1,1:ncol(sinal)] <- "Fora"
 sinal <- sncalc(ncol(Zm),nrow(Zm),as.matrix(Zm), tr=tr, sinal=sinal)
@@ -205,7 +212,7 @@ par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
   par_est <- parestrade[[j]]
   invest_t[,j] <- returcalci(as.matrix(sinal[,j]),
-                           as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
+                           as.matrix(par_est),betas = betas[j,2],invest = invest_t[,j])
 }
 colnames(invest_t) <- names(parestrade)
 
@@ -224,7 +231,7 @@ names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
 names(invest_t) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-print(paste0("Calculando os Retornos Totais. Portfólio ",p))
+print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
 for(f in 1:length(invest_t)){
   portret[1,f] <- ((invest_t[nrow(invest_t),f]/invest_t[1,f])-1)*100
