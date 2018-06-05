@@ -1,4 +1,5 @@
 library(doParallel)
+library(plyr)
 library(partialCI)
 library(readxl)
 library(xts)
@@ -120,7 +121,7 @@ for(j in 1:length(sinal)){
 
 invest <- data.frame(matrix(data = rep(1,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 retorno <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
-tt <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
+ttf <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 results <- NULL
 par_est <- data.frame(NULL)
 for(j in 1:length(parestrade)){
