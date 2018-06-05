@@ -607,7 +607,7 @@ for(j in 1:length(sinal)){
 }
 retornos[[p]] <- retorno_t
 names(retornos)[p] <- paste0("Retornos periodo de trading ",p)
-names(invest) <- names(paresRtested) ### Nomeando os Pares
+names(invest_t) <- names(paresRtested) ### Nomeando os Pares
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 portret <- data.frame(matrix(rep(0,(length(pares2)*3),nrow = length(pares2)),ncol = 3))
