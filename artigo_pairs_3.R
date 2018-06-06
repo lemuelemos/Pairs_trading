@@ -213,7 +213,7 @@ retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),n
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 results <- NULL
 par_est <- data.frame(NULL)
-for(j in 1:length(parestrade)){
+for(j in 1:length(pares)){
   par_est <- parestrade[[j]]
   results <- returcalc(as.matrix(sinal[,j]),
                        as.matrix(par_est),betas = betas$beta_[j],invest = invest_t[,j])
@@ -222,9 +222,9 @@ for(j in 1:length(parestrade)){
   tt2[,j] <- results$tt
 }
 tt2[1,1:ncol(tt2)] <- "Fora"
-colnames(invest_t) <- names(parestrade)
-colnames(retorno_t) <- names(parestrade)
-colnames(tt2) <- names(parestrade)
+colnames(invest_t) <- names(pares)
+colnames(retorno_t) <- names(pares)
+colnames(tt2) <- names(pares)
 
 
 
