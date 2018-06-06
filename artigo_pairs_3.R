@@ -261,10 +261,7 @@ trading_return[[p]] <- ret_aux
   } 
 }
 #### Salvando Dados Importantes
-    if(!is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]))
-    {source('res_data_est.R')
-      next
-      }
+    source('res_data_est.R')
  }
 }
 
