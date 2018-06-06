@@ -53,7 +53,7 @@ for(pp in 1:3){
                ,p,". Period from ",
                min(time_window[[p]]), " to ",max(time_window[[p]])))
   
-  no_cores <- detectCores()
+  no_cores <- detectCores() 
   cl <- makeCluster(no_cores)
   clusterExport(cl, "test_period_est")
   clusterEvalQ(cl, library(partialCI))
@@ -213,17 +213,18 @@ retorno_t <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),n
 tt2 <- data.frame(matrix(data = rep(0,ncol(Zm)*nrow(Zm)),ncol = ncol(Zm),nrow = nrow(Zm)))
 results <- NULL
 par_est <- data.frame(NULL)
-for(j in 1:length(parestrade)){
+for(j in 1:length(pares)){
   par_est <- parestrade[[j]]
   results <- returcalc(as.matrix(sinal[,j]),
-                       as.matrix(par_est),betas = betas$beta_[j],invest = invest[,j])
-  invest[,j] <- results[[1]]
-  retorno[,j] <- results[[2]]
-  tt2[,j] <- results[[2]]
+                       as.matrix(par_est),betas = betas$beta_[j],invest = invest_t[,j])
+  invest_t[,j] <- results$invest
+  retorno_t[,j] <- results$retorno
+  tt2[,j] <- results$tt
 }
-colnames(invest) <- names(parestrade)
-colnames(retorno) <- names(parestrade)
-colnames(tt2) <- names(parestrade)
+tt2[1,1:ncol(tt2)] <- "Fora"
+colnames(invest_t) <- names(pares)
+colnames(retorno_t) <- names(pares)
+colnames(tt2) <- names(pares)
 
 
 
@@ -232,22 +233,23 @@ print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm)*3),ncol = ncol(Zm),nrow = 3))
 for(f in 1:length(invest_t)){
   for(i in (formation_windown[pp]+2):nrow(tt2)){
-    if(tt2[i,j] == "Abriu"){
+    if(tt2[i,f] == "Abriu"){
   portret[1,f] <- ((invest_t[nrow(invest_t),f]/invest_t[i,f])-1)*100
-  portret[2,f] <- sd(invest_t[,f])
+  portret[2,f] <- sd(invest_t[i:nrow(invest_t),f])
   portret[3,f] <- portret[1,f]/portret[2,f]
   colnames(portret)[f] <- names(parestrade)[f]
   break
     } else{
-      portret[j,1] <- 0
-      portret[j,2] <- 0
-      portret[j,3] <- 0
-      rownames(portret)[j] <- names(paresRtestedM)[j]
+      portret[1,f] <- 0
+      portret[2,f] <- 0
+      portret[3,f] <- 0
+      colnames(portret)[f] <- names(paresRtestedM)[f]
       next
     }
   }
 }
-
+portret <- t(portret)
+colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 if(ii == 1){
   ret_aux[[1]] <- portret ## Retornos Totais
   names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
@@ -259,7 +261,7 @@ trading_return[[p]] <- ret_aux
   } 
 }
 #### Salvando Dados Importantes
-source('res_data_est.R')
+    source('res_data_est.R')
  }
 }
 
