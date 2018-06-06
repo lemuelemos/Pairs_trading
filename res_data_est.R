@@ -1,8 +1,8 @@
 #trading_return <- readRDS("trading_return.rds")
 
 resum_results <- list(NULL)
-resum_results[[1]] <- sapply(trading_return, function(x) x[[1]] %>% apply(.,2,mean))
-resum_results[[2]] <- sapply(trading_return, function(x) x[[2]] %>% apply(.,2,mean))
+resum_results[[1]] <- t(sapply(trading_return, function(x) x[[1]] %>% apply(.,2,mean)))
+resum_results[[2]] <- t(sapply(trading_return, function(x) x[[2]] %>% apply(.,2,mean)))
 names(resum_results)[1] <- "Top 20 Sharp"
 names(resum_results)[2] <- "Top 20 Retur"
 
