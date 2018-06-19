@@ -1,4 +1,4 @@
-#trading_return <- readRDS("trading_return.rds")
+
 
 resum_results <- list(NULL)
 resum_results[[1]] <- t(sapply(trading_return, function(x) x[[1]] %>% apply(.,2,mean)))
@@ -16,8 +16,9 @@ par_estim <- list(NULL)
 par_estim[[1]] <- resum_results
 par_estim[[2]] <- trading_return
 par_estim[[3]] <- select_port
+
+
 saveRDS(par_estim,paste0("par_estim threshold[",tr[1],",",tr[2],"]_,",names(formation_windown)[pp],".rds"))
 
-#resum_results
 
 
