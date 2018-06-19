@@ -10,11 +10,11 @@ library(Rcpp)
 ##### Import data and cleaning NA's
 #source('cpp_codes.R')
 sourceCpp("cpp_codes.cpp")
-ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
+ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018_2.xlsx") #### Reading the data
 
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
 ibrx_2007_2018 <- as.data.frame(ibrx_2007_2018) ## Transform in data_frame to easy handling
-ibrx_2007_2018[,2:101] <- apply(ibrx_2007_2018[,2:101],2,as.numeric) ## Transform the data form char type to numeric type
+ibrx_2007_2018[,2:ncol(ibrx_2007_2018)] <- apply(ibrx_2007_2018[,2:ncol(ibrx_2007_2018)],2,as.numeric) ## Transform the data form char type to numeric type
 ibrx_2007_2018 <- xts(ibrx_2007_2018[,-1],order.by = ibrx_2007_2018$Dates) ## transform in xts to easy handling with time series
 ibrx_2007_2018_integridade <- apply(ibrx_2007_2018,2,
                                     function(x) sum(is.na(x))/nrow(ibrx_2007_2018))*100 ## Calculate the percentage of missing data
