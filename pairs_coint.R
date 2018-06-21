@@ -62,8 +62,7 @@ for(pp in 1){
 no_cores <- detectCores() 
 cl <- makeCluster(no_cores)
 clusterExport(cl, "pares")
-clusterEvalQ
-(cl, library(tseries))
+clusterEvalQ(cl, library(tseries))
 pares_coint_test <- parLapply(cl,pares, function(x) if(tseries::adf.test(resid(x))$p.value < 0.05){x})
 stopCluster(cl)
 
