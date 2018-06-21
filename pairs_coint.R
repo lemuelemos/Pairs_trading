@@ -51,9 +51,20 @@ for(pp in 1){
       no_cores <- detectCores() 
       cl <- makeCluster(no_cores)
       clusterExport(cl, "test_period_est")
-      clusterEvalQ(cl, library(partialCI))
       pares <- parLapply(cl,test_period_est,function(x) apply(test_period_est,2, 
-                                                              function(y) if(x!=y){fit.pci(x,y)}))
+                                                              function(y) if(x!=y){lm(x~y)}))
       stopCluster(cl)
+      pares <- unlist(pares, recursive = F)
+      pares <- pares[!sapply(pares,is.null)]
     }
 }
+
+no_cores <- detectCores() 
+cl <- makeCluster(no_cores)
+clusterExport(cl, "pares")
+clusterEvalQ
+(cl, library(tseries))
+pares_coint_test <- parLapply(cl,pares, function(x) if(tseries::adf.test(resid(x))$p.value < 0.05){x})
+stopCluster(cl)
+
+#tseries::adf.test(resid(x))
