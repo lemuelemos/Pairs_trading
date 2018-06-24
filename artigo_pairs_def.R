@@ -10,15 +10,14 @@ library(Rcpp)
 ##### Import data and cleaning NA's
 #source('cpp_codes.R')
 sourceCpp("cpp_codes.cpp")
-ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018.xlsx", sheet = "ibrx") #### Reading the data
 
+ibrx_2007_2018 <- read_excel("ibrx last price 2007 até 2018_2.xlsx") #### Reading the data
 ibrx_2007_2018$Dates <- as.Date(ibrx_2007_2018$Dates) ## Setting the format of the dates column
 ibrx_2007_2018 <- as.data.frame(ibrx_2007_2018) ## Transform in data_frame to easy handling
-ibrx_2007_2018[,2:101] <- apply(ibrx_2007_2018[,2:101],2,as.numeric) ## Transform the data form char type to numeric type
+ibrx_2007_2018[,2:ncol(ibrx_2007_2018)] <- apply(ibrx_2007_2018[,2:ncol(ibrx_2007_2018)],2,as.numeric) ## Transform the data form char type to numeric type
 ibrx_2007_2018 <- xts(ibrx_2007_2018[,-1],order.by = ibrx_2007_2018$Dates) ## transform in xts to easy handling with time series
 ibrx_2007_2018_integridade <- apply(ibrx_2007_2018,2,
                                     function(x) sum(is.na(x))/nrow(ibrx_2007_2018))*100 ## Calculate the percentage of missing data
-
 ibrx_2007_2018_70 <- ibrx_2007_2018[,names(ibrx_2007_2018_integridade[which(ibrx_2007_2018_integridade<10)])] ## Taking the coluns eith more than 90% of integrite
 ibrx_2008_2017_70 <- ibrx_2007_2018_70["2008/2017"] ## subsetting to eliminate more missing data. 
 ibrx_2008_2017_70 <- na.spline(ibrx_2008_2017_70) ## remove "NA's" spline method Missing values (NAs) are replaced by linear interpolation via approx or cubic spline interpolation via spline, respectively.
@@ -104,7 +103,7 @@ rm(paresRtestedM)
 print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
 sinal <- matrix(data = rep(0,ncol(Zm_fornation)*nrow(Zm_fornation)),ncol = ncol(Zm_fornation),nrow = nrow(Zm_fornation))
 sinal[1,1:ncol(sinal)] <- "Fora"
-sinal <- sncalcf(ncol(Zm_fornation),nrow(Zm_fornation),as.matrix(Zm_fornation), tr=tr, sinal=sinal)
+sinal <- sncalc(ncol(Zm_fornation),nrow(Zm_fornation),as.matrix(Zm_fornation), tr=tr, sinal=sinal)
 sinal<- as.data.frame(sinal) 
 colnames(sinal) <- names(Zm_fornation)
 sinal %>% mutate_if(is.factor,as.character) -> sinal
@@ -209,7 +208,7 @@ Zm_trading[nrow(test_period)+i,] <- Z_norm[nrow(Z_norm),]
 sinal <- matrix(data = rep(0,ncol(Zm_trading)*nrow(Zm_trading)),ncol = ncol(Zm_trading),nrow = nrow(Zm_trading))
 sinal[1,1:ncol(sinal)] <- "Fora"
 print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
-sinal <- sncalct(ncol(Zm_trading),nrow(Zm_trading),as.matrix(Zm_trading), tr=tr, sinal=sinal)
+sinal <- sncalc(ncol(Zm_trading),nrow(Zm_trading),as.matrix(Zm_trading), tr=tr, sinal=sinal)
 sinal <- as.data.frame(sinal) 
 colnames(sinal) <- names(Zm_trading)
 sinal %>% mutate_if(is.factor,as.character) -> sinal
