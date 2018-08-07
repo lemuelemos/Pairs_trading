@@ -34,6 +34,7 @@ ativosl <- BatchGetSymbols(tickers = Ativos, first.date, last.date,
 ativosw <- reshape.wide(ativosl$df.tickers) #### Changing the arrangement of the data to wide format
 dados_estimacao <- xts(ativosw$price.close[,-1], order.by = ativosw$price.adjusted$ref.date) ## Transform in xts 
 dados_estimacao <-  dados_estimacao[,apply(!is.na(dados_estimacao),2,all)] ## Removing Missing Data
+dados_estimacao <- dados_estimacao[,!names(dados_estimacao)=="ENBR3.SA",drop=F]
 periodo_teste <- c(time(dados_estimacao)[1],time(dados_estimacao)[nrow(dados_estimacao)]-180) ### Setting the períod 
 dados_estimacao_teste <- window(dados_estimacao, start=periodo_teste[1], end=periodo_teste[2]) ### The formation períod
 Nomes <- colnames(dados_estimacao_teste)
@@ -340,7 +341,7 @@ for(f in 1:length(invest)){
 }
 
 portret <- t(portret) ## Retornos Totais
-portsel <- sort(portret[,3], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
+portsel <- sort(portret[,1], decreasing = T)[1:20] ### Selecionando os 20 melhores Sharpes
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 portret1 <- portret
 
