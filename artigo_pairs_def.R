@@ -26,6 +26,8 @@ Nomes <- colnames(ibrx_2008_2017_70) ## Taking the names of equity's
 Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
 
+ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:10]
+
 ### Setting the window of estimation
 resultados_por_tr <- list(NULL)
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
@@ -35,6 +37,8 @@ select_port <- as.list(NULL)
 retornos <- as.list(NULL)
 time_window <- as.list(NULL)
 ret_aux <- as.list(NULL)
+trades <- list(NULL)
+returns <- list(NULL)
 threshold <- matrix(c(1,1.5,1,1.5,0.5,0.5,1,1),4,2)
 formation_windown <- c(251,503,1007)
 names(formation_windown) <- c("4Y","2Y","1Y")
@@ -57,7 +61,8 @@ for(pp in 1:3){
   cl <- makeCluster(no_cores)
   clusterExport(cl, "test_period_est")
   clusterEvalQ(cl, library(partialCI))
-  pares <- parLapply(cl,test_period_est,function(x) apply(test_period_est,2, 
+  pares <- parLapply(cl,test_period_est,
+                     function(x) apply(test_period_est,2, 
                                                       function(y) if(x!=y){fit.pci(x,y)}))
   stopCluster(cl)
   
@@ -73,6 +78,7 @@ pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os par
 #### Taking the pairs with R square greater than 0.5
 print(paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
+paresR <- paresR[sapply(paresR,function(x) x$rho > 0.5)]
 rm(pares)
 
 ### Testing partial Cointegration
@@ -158,8 +164,10 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 #####################################################
 
 for(ii in c(1,3)){
-  print("Trading Period")
-  portsel <- sort(ret_port[[p]][,ii], decreasing = T)[1:20] ## Seleect the top 20 sharp's
+  if(ii == 1){
+  print("Trading Period top 20 return")
+  } else {print("Trading Period top 20 sharp")}
+  portsel <- sort(ret_port[[p]][,ii], decreasing = T)[1:5] ## Seleect the top 20 sharp's
   select_port[[p]] <- names(portsel) # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                             start = time(test_period)[1],
@@ -179,13 +187,13 @@ for(j in 1:length(portsel)){
 }
 
 ### Estimating pairs
-for(i in 1:trading_window){
-parestrade_est <- lapply(parestrade, function(x) x[1:(nrow(test_period)+i),])
 cl <- makeCluster(no_cores)
+for(i in 1:trading_window){
+cat("\r", i, "of", trading_window,"\r")
+parestrade_est <- lapply(parestrade, function(x) x[1:(nrow(test_period)+i),])
 clusterExport(cl, "parestrade_est")
 clusterEvalQ(cl, library(partialCI))
 pares <- parLapply(cl,parestrade_est, function(x) fit.pci(x[,1],x[,2]))
-stopCluster(cl)
 
 pares <- pares[!sapply(pares,is.null)]
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
@@ -204,6 +212,7 @@ Z_norm <- as.data.frame(Z_norm)
 colnames(Z_norm) <- gsub("\\."," ",names(Z_norm))
 Zm_trading[nrow(test_period)+i,] <- Z_norm[nrow(Z_norm),]
 }
+stopCluster(cl)
 ### sign of operations
 sinal <- matrix(data = rep(0,ncol(Zm_trading)*nrow(Zm_trading)),ncol = ncol(Zm_trading),nrow = nrow(Zm_trading))
 sinal[1,1:ncol(sinal)] <- "Fora"
@@ -233,14 +242,13 @@ colnames(retorno_t) <- names(pares)
 colnames(tt2) <- names(pares)
 
 
-
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm_trading)*3),ncol = ncol(Zm_trading),nrow = 3))
 for(f in 1:length(invest_t)){
   for(i in (formation_windown[pp]+2):nrow(tt2)){
     if(tt2[i,f] == "Abriu"){
-  portret[1,f] <- ((invest_t[nrow(invest_t),f]/invest_t[i,f])-1)*100
+  portret[1,f] <- (tail(cumprod(retorno_t[(formation_windown[pp]+2):nrow(tt2),f]+1),1)-1)*100
   portret[2,f] <- sd(invest_t[i:nrow(invest_t),f], na.rm = T)
   portret[3,f] <- portret[1,f]/portret[2,f]
   colnames(portret)[f] <- names(parestrade)[f]
@@ -258,12 +266,17 @@ portret <- t(portret)
 colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
 if(ii == 1){
   ret_aux[[1]] <- portret ## Retornos Totais
+  trades[[1]] <- retorno_t
   names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
+  names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
 } else{
   ret_aux[[2]] <- portret ## Retornos Totais
+  trades[[2]] <- retorno_t
   names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+  names(trades)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
 }
 trading_return[[p]] <- ret_aux
+returns[[p]] <- trades
   } 
 }
 #### Salvando Dados Importantes

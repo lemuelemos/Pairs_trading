@@ -62,7 +62,8 @@ pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
 
 ################# Retirando os pares com o R superior a 0.5 
 print("Taking the pais with R2>0.5. Portfolio ")
-paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
+paresR <- pares[sapply(pares,function(x) x$pvmr > 0.7)]
+paresR <- paresR[sapply(paresR,function(x) x$rho > 0.5)]
 paresR <- paresR[!sapply(paresR,is.null)] ### Retirando os valores vazios
 
 ### Testing partial Cointegration
