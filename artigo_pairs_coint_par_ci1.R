@@ -26,24 +26,28 @@ Nomes <- colnames(ibrx_2008_2017_70)
 Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- str_trim(Nomes)
 
-
+ret_aux <- list(NULL)
 ret_port <- list(NULL)
+trades <- list(NULL)
+trading_return <- list(NULL)
+returns <- list(NULL)
 ### Set de window estimation - rolling regressions
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-formation_windown <- c(251,503,1007)
+window_test <- seq(1,nrow(ibrx_2008_2017_70),by=21)
+formation_windown <- c(126,503,1007)
 no_cores <- detectCores()
-cl <- makeCluster(no_cores)
-for(pp in 3){
-  for(p in 1){
+
+for(pp in 1){
+  for(p in seq_along(window_test)){
     test_period <- window(ibrx_2008_2017_70,
                           start=time(ibrx_2008_2017_70)[window_test[p]],
-                          end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
+                          end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
                           else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
     
     datas <- time(test_period)
     #test_period <- timetk::tk_tbl(test_period)
     
 ##### Estimating
+cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
 print("Estimating Pairs")
@@ -167,7 +171,7 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 #####################################################
 print("Periodo de Trading")
 select_port <- list(NULL)
-for(ii in 3){
+for(ii in c(1,3)){
   if(ii == 1){
     print("Trading Period top 20 return")
   } else {print("Trading Period top 20 sharp")}
@@ -176,7 +180,7 @@ for(ii in 3){
   select_port[[p]] <- portsel # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
-                           end = time(test_period)[nrow(test_period)]+180)
+                           end = time(test_period)[nrow(test_period)]+30)
   trading_window <- nrow(trading_period) - nrow(test_period)
   betas_trading <- betas_ci1 %>% 
     select(.id,V1) %>% 
@@ -185,7 +189,7 @@ for(ii in 3){
   Zm_ci1_t <- Zm_ci1 %>% select(portsel)
   
 ############# Estimating the pairs ################
-print("Estimating the pairs")
+print("Estimating the pairs T")
 parestrade_ci1_t <-as.list(NULL)
   for(j in 1:length(portsel)){
     parestrade_ci1_t[[j]] <- cbind(trading_period[,grep(str_trim(str_sub(portsel[j],
@@ -201,7 +205,7 @@ cl <- makeCluster(no_cores)
 pares_trading <- list(NULL)
 for(i in 1:trading_window){
   cat("\r", i, "of", trading_window,"\r")
-  parestrade_est <- lapply(parestrade_ci1_t, function(x) x[1:(nrow(test_period)+i),])
+  parestrade_est <- lapply(parestrade_ci1_t, function(x) x[i:(nrow(test_period)+i),])
   clusterExport(cl, "parestrade_est")
   clusterEvalQ(cl, library(egcm))
   pares_trading <- parLapply(cl,parestrade_est, function(x) egcm(x[,2],x[,1]))
@@ -273,14 +277,15 @@ for(f in 1:length(invest_t_ci1)){
 }
 portret_t <- t(portret_t)
 colnames(portret_t) <- c("Retorno Total","Desvio Padrão","Sharpe")
+
 if(ii == 1){
-  ret_aux[[1]] <- portret ## Retornos Totais
-  trades[[1]] <- retorno_t
+  ret_aux[[1]] <- portret_t ## Retornos Totais
+  trades[[1]] <- retorno_t_ci1
   names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
   names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
 } else{
-  ret_aux[[2]] <- portret ## Retornos Totais
-  trades[[2]] <- retorno_t
+  ret_aux[[2]] <- portret_t ## Retornos Totais
+  trades[[2]] <- retorno_t_ci1
   names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Return")
   names(trades)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
 }
