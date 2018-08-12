@@ -37,17 +37,39 @@ test_period <- as.data.frame(test_period)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
 ####################################
-pares <- parLapply(cl,test_period,function(x) apply(test_period,2, 
-                                                    function(y) if(x!=y){egcm(x,y,log = T,normalize = T)}))
-pares <- unlist(pares, recursive = F)
-pares <- pares[!sapply(pares,is.null)]
+print("Estimating Pairs")
+pares_pp <- parLapply(cl,test_period,function(x) apply(test_period,2, 
+                                                    function(y) if(x!=y){egcm(x, y, urtest = "pp")}))
+
+pares_pgff <- parLapply(cl,test_period,function(x) apply(test_period,2, 
+                                                       function(y) if(x!=y){egcm(x, y, urtest = "pgff")}))
+
+pares_pp <- unlist(pares_pp, recursive = F)
+pares_pp <- pares_pp[!sapply(pares_pp,is.null)]
+pares_pgff <- unlist(pares_pgff, recursive = F)
+pares_pgff <- pares_pgff[!sapply(pares_pgff,is.null)]
 
 }
 stopCluster(cl)
 
-pares_coint <- pares[sapply(pares, is.cointegrated)]
+############# Teste de Pares #####################
+print("Pairs Testing")
+pares_coint_pp <- pares_pp[sapply(pares_pp, is.cointegrated)]
+pares_coint_pgff <- pares_pgff[sapply(pares_pgff,is.cointegrated)]
+
+rm(pares_pp)
+rm(pares_pgff)
+
+nomes_pp <- names(pares_coint_pp)
+nomes_pp <- gsub(" ", "", nomes_pp)
+nomes_pp <- gsub("\\.", " vs ", nomes_pp)
+nomes_pp <- data_frame(nomes_pp)
+
+nomes_pgff <- names(pares_coint_pgff)
+nomes_pgff <- gsub(" ", "", nomes_pgff)
+nomes_pgff <- gsub("\\.", " vs ", nomes_pgff)
+nomes_pgff <- data_frame(nomes_pgff)
 
 
-
-
-
+pares_coint <- nomes_pp %>% dplyr::filter(nomes_pp %in% nomes_pgff$nomes_pgff)
+names(pares_coint_pgff) <- nomes_pgff$nomes_pgff

@@ -22,7 +22,8 @@ sourceCpp("cpp_codes.cpp")
 
 ##### Taking tickers that compound IBOV 
 print("Check the ibov asset's")
-Ativos <- paste0(BatchGetSymbols::GetIbovStocks()$tickers, '.SA')
+Ativos <- GetIbovStocks()
+Ativos <- paste0(Ativos$tickers, '.SA')
 
 # Time Window to download the data
 first.date <- Sys.Date() - 540 # Dados de 4 anos mais 6 meses para o período de trading
@@ -138,7 +139,7 @@ for(f in 1:length(invest_f)){
 
 portret_f <- t(portret_f) ## Retornos Totais
 colnames(portret_f) <- c("Retorno Total","Desvio Padrão","Sharpe")
-portsel <- sort(portret_f[,3],decreasing = T)[1:20]
+portsel <- sort(portret_f[,3],decreasing = T)[1:40]
 
 #########################################################
 ################## Trading Period #######################
@@ -180,7 +181,7 @@ clusterEvalQ(cl, library(partialCI))
 print("Generating Signal")
 sinal_t <- matrix(data = rep(0,ncol(Zm_t)*nrow(Zm_t)),ncol = ncol(Zm_t),nrow = nrow(Zm_t))
 sinal_t[1,1:ncol(sinal_t)] <- "Fora"
-tr <- c(1,0.5)
+tr <- c(1,0)
 sinal_t <- sncalc(ncol(Zm_t),nrow(Zm_t),as.matrix(Zm_t), tr=tr, sinal=sinal_t)
 sinal_t<- as.data.frame(sinal_t) 
 colnames(sinal_t) <- names(Zm_t)
