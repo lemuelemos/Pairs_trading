@@ -25,6 +25,7 @@ print("Check the ibov asset's")
 Ativos <- GetIbovStocks()
 Ativos <- paste0(Ativos$tickers, '.SA')
 
+
 # Time Window to download the data
 first.date <- Sys.Date() - 540 # Dados de 4 anos mais 6 meses para o período de trading
 last.date <- Sys.Date() - 1
@@ -139,7 +140,7 @@ for(f in 1:length(invest_f)){
 
 portret_f <- t(portret_f) ## Retornos Totais
 colnames(portret_f) <- c("Retorno Total","Desvio Padrão","Sharpe")
-portsel <- sort(portret_f[,3],decreasing = T)[1:40]
+portsel <- sort(portret_f[,3],decreasing = T)[1:20]
 
 #########################################################
 ################## Trading Period #######################
@@ -154,26 +155,30 @@ for(j in 1:length(portsel)){
 
 pares_t <- list(NULL)
 Zm_t <- Zm %>% select(names(portsel))
+Z_norm <- NULL
 
+trading_window <- nrow(dados_estimacao) - nrow(dados_estimacao_teste)
 print("Estimating the pairs")
-for(i in (nrow(dados_estimacao_teste)+1):nrow(dados_estimacao)){
 cl <- makeCluster(no_cores)
-clusterExport(cl, "parestrade_t")
+clusterExport(cl, "dados_estimacao_teste")
 clusterExport(cl, "i")
 clusterEvalQ(cl, library(partialCI))
- pares_t  <- parLapply(cl,parestrade_t,function(x) fit.pci(x[1:i,1],x[1:i,2]))
+for(i in 1:trading_window){
+ parestrade_tr <- lapply(parestrade_t, function(x) x[i:(nrow(dados_estimacao_teste)+i),])
+ clusterExport(cl, "parestrade_tr")
+ pares_t  <- parLapply(cl,parestrade_tr,
+                       function(x) fit.pci(x[,1],x[,2]))
 
  pares_t <- pares_t[!sapply(pares_t,is.null)]
  pares_t <- pares_t[!sapply(pares_t, function(x) is.na(x$rho.se))]
  
- cat("\r", i, "of", nrow(dados_estimacao))
+ cat("\r", i, "of", trading_window)
  pares_tM <- lapply(pares_t, function(x) statehistory.pci(x))
  Z_norm <- lapply(pares_tM, function(x) x$M/sd(x$M))
  Z_norm <- as.data.frame(Z_norm)
- Zm_t[i,] <- Z_norm[nrow(Z_norm),]
- stopCluster(cl)
+ Zm_t[nrow(dados_estimacao_teste)+i,] <- Z_norm[nrow(Z_norm),]
 }
-
+stopCluster(cl)
 ############# Sinal Para as Operações
 ## Openright/OutRight = Operações em que o valor do resíduo é positivo
 ## OpenLeft/OutLeft = Operações em que o valor de resídou é negativo
