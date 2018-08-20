@@ -13,8 +13,8 @@ CharacterMatrix sncalc(int ncol, int nrow, NumericMatrix Zm, NumericVector tr,
               (sinal(i-1,j) == "OpenLeft" && Zm(i,j) < tr(1) && i != (nrow-1))) sinal(i,j) = "OpenLeft";
       else if((Zm(i,j) < -tr(1) && sinal(i-1,j) == "OpenRight" && i != (nrow-1))) sinal(i,j) = "OutRight";
       else if((Zm(i,j) > tr(1) && sinal(i-1,j) == "OpenLeft" && i != (nrow-1))) sinal(i,j) = "OutLeft";
-      else if((i == (nrow-1) && sinal(i-1,j) == "OpenRight") || 
-              (i == (nrow-1) && sinal(i-1,j) == "OpenLeft")) sinal(i,j) = "Fora";
+      else if((i == (nrow-1) && sinal(i-1,j) == "OpenRight")) sinal(i,j) = "OutRight";
+      else if((i == (nrow-1) && sinal(i-1,j) == "OpenLeft")) sinal(i,j) = "OutLeft";
       else sinal(i,j) = "Fora";
     }
   }
