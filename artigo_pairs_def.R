@@ -101,6 +101,11 @@ paresRtested <- paresR[parSapply(cl,paresR,
 stopCluster(cl)
 rm(paresR)
 
+saveRDS(paresRtested,file=paste0(getwd(),"/resultados/pairRtested_",
+                          min(time_window[[p]]),"_to_",
+                          max(time_window[[p]]),"_portfolio",p,"_fmw_",
+                          names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
+
 ### Estimation of ocult states
 print(paste0("Estimation of ocult states. Portfolio ",p))
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
