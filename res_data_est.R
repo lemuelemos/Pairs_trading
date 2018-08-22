@@ -18,7 +18,8 @@ par_estim[[2]] <- trading_return
 par_estim[[3]] <- select_port
 par_estim[[4]] <- returns
 
-saveRDS(par_estim,paste0("par_estim threshold[",tr[1],",",tr[2],"]_,",names(formation_windown)[pp],".rds"))
+saveRDS(par_estim,paste0("par_estim threshold[",tr[1],",",tr[2],"]_,",
+                         names(formation_windown)[pp],".rds"))
 
 
 

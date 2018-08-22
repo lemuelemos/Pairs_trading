@@ -114,3 +114,10 @@ for(ii in c(1,3)){
   trading_return[[p]] <- ret_aux
   returns[[p]] <- trades
 } 
+
+
+
+
+
+
+
