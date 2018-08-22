@@ -82,7 +82,7 @@ pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os par
 saveRDS(pares,file=paste0(getwd(),"/resultados/pair_",
                           min(time_window[[p]]),"_to_",
                           max(time_window[[p]]),"_portfolio",p,"_fmw_",
-                          names(formation_windown)[p],"_tr_(",tr[1],",",tr[2],")"))
+                          names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
 
 pairs_est[[p]] <- pares
 #### Taking the pairs with R square greater than 0.5
@@ -175,12 +175,11 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 if(estimation_method == "fixed"){
   source("trading_period_fixed_window.R")
 } else {source("trading_period_rolling_window.R")}
-
-saveRDS(pairs_est,file = paste0(getwd(),"/resultados/pairs_fmw_",
-                                names(formation_windown)[p],"_tr(",tr[1],",",tr[2],")"))
 }
 #### Salvando Dados Importantes
     source('res_data_est.R')
+    saveRDS(pairs_est,file = paste0(getwd(),"/resultados/pairs_fmw_",
+                                    names(formation_windown)[pp],"_tr(",tr[1],",",tr[2],")"))
     }
 }
 
