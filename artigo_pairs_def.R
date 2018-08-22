@@ -26,14 +26,16 @@ Nomes <- colnames(ibrx_2008_2017_70) ## Taking the names of equity's
 Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
 
-#ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:20]
+ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:20]
 
 ### Setting the window of estimation
 estimation_method <- "fixed"
+dir.create("C:/Users/lemue/Documents/Pairs_trading/resultados")
 ###
 resultados_por_tr <- list(NULL)
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
 ret_port <- as.list(NULL)
+pairs_est <- list(NULL)
 trading_return <- as.list(NULL)
 select_port <- as.list(NULL)
 retornos <- as.list(NULL)
@@ -77,12 +79,12 @@ for(pp in 1:3){
 pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 
-saveRDS(pares,paste0("C:/Users/lemue/Documents/Pairs_trading/resultados/pair_",
-                     min(time_window[[p]]),"_to_",
-                     max(time_window[[p]]),"_portfolio",p,"_fmw_",
-                     names(formation_windown)[p],"_tr_",tr))
+saveRDS(pares,file=paste0(getwd(),"/resultados/pair_",
+                          min(time_window[[p]]),"_to_",
+                          max(time_window[[p]]),"_portfolio",p,"_fmw_",
+                          names(formation_windown)[p],"_tr_(",tr[1],",",tr[2],")"))
 
-
+pairs_est[[p]] <- pares
 #### Taking the pairs with R square greater than 0.5
 print(paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
@@ -174,9 +176,11 @@ if(estimation_method == "fixed"){
   source("trading_period_fixed_window.R")
 } else {source("trading_period_rolling_window.R")}
 
+saveRDS(pairs_est,file = paste0(getwd(),"/resultados/pairs_fmw_",
+                                names(formation_windown)[p],"_tr(",tr[1],",",tr[2],")"))
 }
 #### Salvando Dados Importantes
-  }
-  source('res_data_est.R')
+    source('res_data_est.R')
+    }
 }
 
