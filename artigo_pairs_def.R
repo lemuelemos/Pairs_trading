@@ -26,11 +26,11 @@ Nomes <- colnames(ibrx_2008_2017_70) ## Taking the names of equity's
 Nomes <- str_sub(Nomes, 1,6)
 colnames(ibrx_2008_2017_70) <- Nomes
 
-ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:20]
+#ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:20]
 
 ### Setting the window of estimation
 estimation_method <- "fixed"
-file.path(getwd(), "resultados")
+dir.create(file.path(getwd(), "resultados"))
 ###
 resultados_por_tr <- list(NULL)
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
