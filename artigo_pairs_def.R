@@ -30,7 +30,7 @@ ibrx_2008_2017_70 <- ibrx_2008_2017_70[,1:20]
 
 ### Setting the window of estimation
 estimation_method <- "fixed"
-dir.create("C:/Users/lemue/Documents/Pairs_trading/resultados")
+file.path(getwd(), "resultados")
 ###
 resultados_por_tr <- list(NULL)
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
