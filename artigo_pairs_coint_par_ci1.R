@@ -31,9 +31,9 @@ ret_port <- list(NULL)
 ### Set de window estimation - rolling regressions
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
 formation_windown <- c(251,503,1007)
-no_cores <- detectCores()
+no_cores <- detectCores() - 2
 cl <- makeCluster(no_cores)
-for(pp in 3){
+for(pp in 1){
   for(p in 1){
     test_period <- window(ibrx_2008_2017_70,
                           start=time(ibrx_2008_2017_70)[window_test[p]],
