@@ -32,32 +32,19 @@ trades <- list(NULL)
 trading_return <- list(NULL)
 returns <- list(NULL)
 ### Set de window estimation - rolling regressions
-<<<<<<< HEAD
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=21)
-formation_windown <- c(126,503,1007)
-no_cores <- detectCores()
 
-for(pp in 1){
+window_test <- seq(1,nrow(ibrx_2008_2017_70),by=22)
+formation_windown <- c(63,126,252)
+
+for(pp in 2){
   for(p in seq_along(window_test)){
-=======
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-formation_windown <- c(251,503,1007)
-no_cores <- detectCores()
-cl <- makeCluster(no_cores)
-for(pp in 1){
-<<<<<<< HEAD
-  for(p in 1){
->>>>>>> ab1eb5c7d46fefcea64e34abe816e631c3ea155e
-=======
-  for(p in seq_along(window_test)){
->>>>>>> da519f9484353fe07d06aebcc74b2b1da315b26e
-    test_period <- window(ibrx_2008_2017_70,
+  test_period <- window(ibrx_2008_2017_70,
                           start=time(ibrx_2008_2017_70)[window_test[p]],
                           end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
                           else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
     
-    datas <- time(test_period)
-    #test_period <- timetk::tk_tbl(test_period)
+  datas <- time(test_period)
+  #test_period <- timetk::tk_tbl(test_period)
     
 ##### Estimating
 cl <- makeCluster(no_cores)
