@@ -32,12 +32,21 @@ trades <- list(NULL)
 trading_return <- list(NULL)
 returns <- list(NULL)
 ### Set de window estimation - rolling regressions
+<<<<<<< HEAD
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=21)
 formation_windown <- c(126,503,1007)
 no_cores <- detectCores()
 
 for(pp in 1){
   for(p in seq_along(window_test)){
+=======
+window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
+formation_windown <- c(251,503,1007)
+no_cores <- detectCores() - 2
+cl <- makeCluster(no_cores)
+for(pp in 1){
+  for(p in 1){
+>>>>>>> ab1eb5c7d46fefcea64e34abe816e631c3ea155e
     test_period <- window(ibrx_2008_2017_70,
                           start=time(ibrx_2008_2017_70)[window_test[p]],
                           end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
