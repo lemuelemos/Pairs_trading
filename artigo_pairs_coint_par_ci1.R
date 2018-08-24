@@ -42,11 +42,15 @@ for(pp in 1){
 =======
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
 formation_windown <- c(251,503,1007)
-no_cores <- detectCores() - 2
+no_cores <- detectCores()
 cl <- makeCluster(no_cores)
 for(pp in 1){
+<<<<<<< HEAD
   for(p in 1){
 >>>>>>> ab1eb5c7d46fefcea64e34abe816e631c3ea155e
+=======
+  for(p in seq_along(window_test)){
+>>>>>>> da519f9484353fe07d06aebcc74b2b1da315b26e
     test_period <- window(ibrx_2008_2017_70,
                           start=time(ibrx_2008_2017_70)[window_test[p]],
                           end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
@@ -303,22 +307,6 @@ returns[[p]] <- trades
     }  
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
