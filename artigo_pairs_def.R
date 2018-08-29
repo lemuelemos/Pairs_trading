@@ -32,21 +32,22 @@ colnames(ibrx_2008_2017_70) <- Nomes
 estimation_method <- "fixed"
 dir.create(file.path(getwd(), "resultados"))
 ###
-resultados_por_tr <- list(NULL)
+
 window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-ret_port <- as.list(NULL)
-pairs_est <- list(NULL)
-trading_return <- as.list(NULL)
-select_port <- as.list(NULL)
-retornos <- as.list(NULL)
-time_window <- as.list(NULL)
-ret_aux <- as.list(NULL)
-trades <- list(NULL)
-returns <- list(NULL)
 threshold <- matrix(c(1,1,0.5,0),2,2)
 formation_windown <- c(251,503,1007)
-names(formation_windown) <- c("1Y","2Y","4Y")
+names(formation_windown) <- c("4Y","2Y","1Y")
 for(pp in 1:3){
+  ret_port <- as.list(NULL)
+  pairs_est <- list(NULL)
+  trading_return <- as.list(NULL)
+  select_port <- as.list(NULL)
+  retornos <- as.list(NULL)
+  time_window <- as.list(NULL)
+  ret_aux <- as.list(NULL)
+  trades <- list(NULL)
+  returns <- list(NULL)
+  resultados_por_tr <- list(NULL)
   for(kk in 1:nrow(threshold)){
     tr <- threshold[kk,]
     for(p in seq_along(window_test)){
