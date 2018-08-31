@@ -53,7 +53,7 @@ for(pp in 1:length(formation_windown)){
 cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
-cat("Estimating Pairs")
+cat("\n","Estimating Pairs","\r")
 
 pares_adf <- parLapply(cl,
                        data.frame(test_period),
@@ -73,7 +73,7 @@ pares_adf <- pares_adf[!sapply(pares_adf,is.null)]
 stopCluster(cl)   
 
 ############# Testing for cointegration #####################
-cat("Pairs Testing")   
+cat("\r","Pairs Testing","\r")   
 
 pares_coint_adf <- pares_adf[sapply(pares_adf,is.cointegrated)]
 pares_coint_adf <- pares_coint_adf[sapply(pares_coint_adf,is.ar1)]
@@ -102,7 +102,7 @@ pares_coint_ci1s <- pares_coint_adf[pares_coint_ci1$nomes_adf]
 
 ################################################################
 ### Signal Calc
-cat("Signal Calc")
+cat("\n","Signal Calc","\n")
 
 Zm_ci1 <- sapply(pares_coint_ci1s, function(x) x$residuals/x$residuals.sd)
 Zm_ci1 <- data.frame(Zm_ci1)
