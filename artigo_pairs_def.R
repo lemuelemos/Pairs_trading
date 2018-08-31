@@ -119,14 +119,14 @@ colnames(betas_formation) <- c("Pares","betas")
 #rm(paresRtested)
 
 ############### Normalizando O M
-print(paste0("Normalizing the M. Portfolio",p))
+cat(paste0("Normalizing the M. Portfolio",p))
 Zm_fornation <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
 Zm_fornation <- as.data.frame(Zm_fornation)
 colnames(Zm_fornation) <- gsub("\\."," ",names(Zm_fornation))
 rm(paresRtestedM)
 
 ### sign of operations
-print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
+cat(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
 sinal <- matrix(data = rep(0,ncol(Zm_fornation)*nrow(Zm_fornation)),ncol = ncol(Zm_fornation),nrow = nrow(Zm_fornation))
 sinal[1,1:ncol(sinal)] <- "Fora"
 sinal <- sncalc(ncol(Zm_fornation),nrow(Zm_fornation),as.matrix(Zm_fornation), tr=tr, sinal=sinal)
@@ -136,7 +136,7 @@ sinal %>% mutate_if(is.factor,as.character) -> sinal
 #as.xts(sinal, order.by = time(test_period))
 
 ############# Return Calc
-print(paste0("Return Calc. Portfolio",p))
+cat(paste0("Return Calc. Portfolio",p))
 parestrade <- list(NULL)
 for(j in 1:length(sinal)){
   parestrade[[j]] <- cbind(test_period[,str_sub(names(sinal)[j],end=6)],
@@ -164,7 +164,7 @@ colnames(retorno) <- names(parestrade)
 colnames(ttf) <- names(parestrade)
 
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-print(paste0("Calculating return and sharpe. Portfolio ",p))
+cat(paste0("Calculating return and sharpe. Portfolio ",p))
 portret <- as.data.frame(matrix(data = rep(0,ncol(Zm_fornation)*3),ncol = ncol(Zm_fornation),nrow = 3))
 for(f in 1:length(invest)){
   portret[1,f] <- ((invest[nrow(invest),f]/invest[1,f])-1)*100
