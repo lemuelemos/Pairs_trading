@@ -32,21 +32,13 @@ colnames(ibrx_2008_2017_70) <- Nomes
 estimation_method <- "fixed"
 dir.create(file.path(getwd(), "resultados"))
 ###
-<<<<<<< HEAD
+
 resultados_por_tr <- list(NULL)
 threshold <- matrix(c(1,1,0.5,0),2,2)
 formation_windown <- c(125,251,503,1007)
 names(formation_windown) <- c("6m","1Y","2Y","4Y")
 trading_days <- c(180,360,720,1440)
 for(pp in 1:length(formation_windown)){
-=======
-
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-threshold <- matrix(c(1,1,0.5,0),2,2)
-formation_windown <- c(251,503,1007)
-names(formation_windown) <- c("4Y","2Y","1Y")
-for(pp in 1:3){
->>>>>>> c17347e0da0d8941a874491409a9500d18a4dba8
   ret_port <- as.list(NULL)
   pairs_est <- list(NULL)
   trading_return <- as.list(NULL)
@@ -56,11 +48,9 @@ for(pp in 1:3){
   ret_aux <- as.list(NULL)
   trades <- list(NULL)
   returns <- list(NULL)
-<<<<<<< HEAD
   window_test <- seq(1,nrow(ibrx_2008_2017_70),by=(formation_windown[pp]+1))
-=======
   resultados_por_tr <- list(NULL)
->>>>>>> c17347e0da0d8941a874491409a9500d18a4dba8
+  
   for(kk in 1:nrow(threshold)){
     tr <- threshold[kk,]
     for(p in seq_along(window_test)){
@@ -71,7 +61,7 @@ for(pp in 1:3){
       time_window[[p]] <- time(test_period)
       test_period_est <- as.data.frame(test_period)
   ### Estimating pairs
-  print(paste0("Estimating the pairs from portfolio "
+  cat(paste0("Estimating the pairs from portfolio "
                ,p,". Period from ",
                min(time_window[[p]]), " to ",max(time_window[[p]])))
   
@@ -100,13 +90,13 @@ pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os par
 
 pairs_est[[p]][[1]] <- pares
 #### Taking the pairs with R square greater than 0.5
-print(paste0("Taking the pais with R2>0.5. Portfolio ",p))
+cat(paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
 paresR <- paresR[sapply(paresR,function(x) x$rho > 0.5)]
 rm(pares)
 
 ### Testing partial Cointegration
-print(paste0("Testing for partial coitegration. Portfolio ",p))
+cat(paste0("Testing for partial coitegration. Portfolio ",p))
 cl <- makeCluster(no_cores)
 clusterExport(cl, "paresR")
 clusterEvalQ(cl, library(partialCI))
@@ -122,7 +112,7 @@ rm(paresR)
 
 pairs_est[[p]][[2]] <- paresRtested
 ### Estimation of ocult states
-print(paste0("Estimation of ocult states. Portfolio ",p))
+cat(paste0("Estimation of ocult states. Portfolio ",p))
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
 betas_formation <- ldply(paresRtested, function(x) x$beta)
 colnames(betas_formation) <- c("Pares","betas")
@@ -202,4 +192,3 @@ if(estimation_method == "fixed"){
                                     names(formation_windown)[pp],"_tr(",tr[1],",",tr[2],")"))
     }
 }
-
