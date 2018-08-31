@@ -33,20 +33,21 @@ estimation_method <- "fixed"
 dir.create(file.path(getwd(), "resultados"))
 ###
 resultados_por_tr <- list(NULL)
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-ret_port <- as.list(NULL)
-pairs_est <- list(NULL)
-trading_return <- as.list(NULL)
-select_port <- as.list(NULL)
-retornos <- as.list(NULL)
-time_window <- as.list(NULL)
-ret_aux <- as.list(NULL)
-trades <- list(NULL)
-returns <- list(NULL)
 threshold <- matrix(c(1,1,0.5,0),2,2)
-formation_windown <- c(251,503,1007)
-names(formation_windown) <- c("1Y","2Y","4Y")
-for(pp in 1:3){
+formation_windown <- c(125,251,503,1007)
+names(formation_windown) <- c("6m","1Y","2Y","4Y")
+trading_days <- c(180,360,720,1440)
+for(pp in 1:length(formation_windown)){
+  ret_port <- as.list(NULL)
+  pairs_est <- list(NULL)
+  trading_return <- as.list(NULL)
+  select_port <- as.list(NULL)
+  retornos <- as.list(NULL)
+  time_window <- as.list(NULL)
+  ret_aux <- as.list(NULL)
+  trades <- list(NULL)
+  returns <- list(NULL)
+  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=(formation_windown[pp]+1))
   for(kk in 1:nrow(threshold)){
     tr <- threshold[kk,]
     for(p in seq_along(window_test)){
@@ -79,12 +80,12 @@ for(pp in 1:3){
 pares <- pares[!sapply(pares,is.null)] ### Retirando os valores vazios
 pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os pares com problemas de estimação
 
-saveRDS(pares,file=paste0(getwd(),"/resultados/pair_",
-                          min(time_window[[p]]),"_to_",
-                          max(time_window[[p]]),"_portfolio",p,"_fmw_",
-                          names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
+#saveRDS(pares,file=paste0(getwd(),"/resultados/pair_",
+                          #min(time_window[[p]]),"_to_",
+                          #max(time_window[[p]]),"_portfolio",p,"_fmw_",
+                          #names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
 
-pairs_est[[p]] <- pares
+pairs_est[[p]][[1]] <- pares
 #### Taking the pairs with R square greater than 0.5
 print(paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
@@ -101,11 +102,12 @@ paresRtested <- paresR[parSapply(cl,paresR,
 stopCluster(cl)
 rm(paresR)
 
-saveRDS(paresRtested,file=paste0(getwd(),"/resultados/pairRtested_",
-                          min(time_window[[p]]),"_to_",
-                          max(time_window[[p]]),"_portfolio",p,"_fmw_",
-                          names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
+#saveRDS(paresRtested,file=paste0(getwd(),"/resultados/pairRtested_",
+                          #min(time_window[[p]]),"_to_",
+                          #max(time_window[[p]]),"_portfolio",p,"_fmw_",
+                          #names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
 
+pairs_est[[p]][[2]] <- paresRtested
 ### Estimation of ocult states
 print(paste0("Estimation of ocult states. Portfolio ",p))
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))

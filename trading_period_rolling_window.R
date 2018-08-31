@@ -7,7 +7,7 @@ for(ii in c(1,3)){
   select_port[[p]] <- portsel # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
-                           end = time(test_period)[nrow(test_period)]+180)
+                           end = time(test_period)[nrow(test_period)]+trading_days[pp])
   trading_window <- nrow(trading_period) - nrow(test_period)
   betas_trading <- betas_formation %>% 
     select(Pares, betas) %>% 
@@ -103,12 +103,12 @@ for(ii in c(1,3)){
   if(ii == 1){
     ret_aux[[1]] <- portret ## Retornos Totais
     trades[[1]] <- retorno_t
-    names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
-    names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
+    names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+    names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
   } else{
     ret_aux[[2]] <- portret ## Retornos Totais
     trades[[2]] <- retorno_t
-    names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+    names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
     names(trades)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
   }
   trading_return[[p]] <- ret_aux

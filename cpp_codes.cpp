@@ -85,6 +85,7 @@ List returcalc(CharacterVector sinal, NumericMatrix par, double betas,
           portli = -invest(i-1);
           portsi = ((pshortri/(betas*plongri))*invest(i-1));
           porti = portli+portsi;
+          t_oper(i) = "Abriu";
           for(k = i; k < r; k++){
             plongrf = par(k,1);
             pshortrf = par(k,0);

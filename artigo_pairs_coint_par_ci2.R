@@ -24,35 +24,41 @@ ibrx_2008_2017_70 <- na.spline(ibrx_2008_2017_70) ## remove "NA's" spline method
 rm(list=c("ibrx_2007_2018","ibrx_2007_2018_70")) ## remove objects that will not be use 
 Nomes <- colnames(ibrx_2008_2017_70)
 Nomes <- str_sub(Nomes, 1,6)
-colnames(ibrx_2008_2017_70) <- Nomes
-
-
-ret_port <- list(NULL)
-### Set de window estimation - rolling regressions
-window_test <- seq(1,nrow(ibrx_2008_2017_70),by=126)
-formation_windown <- c(251,503,1007)
+colnames(ibrx_2008_2017_70) <- str_trim(Nomes)
 no_cores <- detectCores()
-cl <- makeCluster(no_cores)
-for(pp in 1){
-  for(p in 1){
+
+### Set de window estimation - rolling regressions
+save_data <- list(NULL)
+formation_windown <- c(42,63,126,252)
+trading_days <- c(60,120,180,360)
+for(pp in 1:length(formation_windown)){
+  ret_aux <- list(NULL)
+  ret_port <- list(NULL)
+  trades <- list(NULL)
+  trading_return <- list(NULL)
+  returns <- list(NULL)
+  portfolios <- list(NULL)
+  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=formation_windown[pp])
+  for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
                         end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
                         else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
 
 datas <- time(test_period)
-test_period <- as.data.frame(test_period)
+
 
 ##### Estimating
-
+cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
 print("Estimating Pairs")
-pares_pp <- parLapply(cl,test_period,function(x) apply(test_period,2, 
-                                                    function(y) if(x!=y){egcm(x, y, urtest = "pp", p.value = 0.01)}))
 
-pares_pgff <- parLapply(cl,test_period,function(x) apply(test_period,2, 
-                                                       function(y) if(x!=y){egcm(x, y, urtest = "pgff",p.value = 0.01)}))
+pares_pp <- parLapply(cl,data.frame(test_period),function(x) apply(test_period,2, 
+                                                    function(y) if(x!=y){egcm(y, x, urtest = "pp", p.value = 0.05)}))
+
+pares_pgff <- parLapply(cl,data.frame(test_period),function(x) apply(test_period,2, 
+                                                       function(y) if(x!=y){egcm(y, x, urtest = "pgff",p.value = 0.05)}))
 
 
 
@@ -79,13 +85,13 @@ rm(pares_pgff)
 ##### Comparing the cointegrationg on the 2 diferent's test's
 
 nomes_pp <- names(pares_coint_pp)
-nomes_pp <- gsub(" ", "", nomes_pp)
+#nomes_pp <- gsub(" ", "", nomes_pp)
 nomes_pp <- gsub("\\.", " vs ", nomes_pp)
 nomes_pp <- data_frame(nomes_pp)
 names(pares_coint_pp) <- nomes_pp$nomes_pp
 
 nomes_pgff <- names(pares_coint_pgff)
-nomes_pgff <- gsub(" ", "", nomes_pgff)
+#nomes_pgff <- gsub(" ", "", nomes_pgff)
 nomes_pgff <- gsub("\\.", " vs ", nomes_pgff)
 nomes_pgff <- data_frame(nomes_pgff)
 names(pares_coint_pgff) <- nomes_pgff$nomes_pgff
@@ -117,10 +123,10 @@ parestrade_ci2 <- list(NULL)
 for(j in 1:ncol(sinal_t_ci2)){
   parestrade_ci2[[j]] <- cbind(test_period[,which(str_detect(colnames(test_period),
                                                              str_trim(str_sub(colnames(sinal_t_ci2)[j],
-                                                                              start=10))) == T)],
+                                                                              end=6))) == T)],
                                test_period[,which(str_detect(colnames(test_period),
                                                              str_sub(colnames(sinal_t_ci2)[j],
-                                                                     end=6)) == T)])
+                                                                     start = 10)) == T)])
   names(parestrade_ci2)[j] <- colnames(sinal_t_ci2)[j]
 }
 
@@ -150,6 +156,7 @@ colnames(ttf_ci2) <- names(parestrade_ci2)
   
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 #####################################################################
+print(paste0("Calculating return and sharpe. Portfolio ",p))
 portret_t_ci2 <- as.data.frame(matrix(data = rep(0,ncol(Zm_ci2)*3),
                                       ncol = ncol(Zm_ci2),nrow = 3))
 for(f in 1:length(invest_f_ci2)){
@@ -167,60 +174,138 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 #####################################################
 ############### Periodo de Trading ##################
 #####################################################
+print("Periodo de Trading")
+select_port <- list(NULL)
 for(ii in c(1,3)){
   if(ii == 1){
     print("Trading Period top 20 return")
   } else {print("Trading Period top 20 sharp")}
-  portsel <- row.names(ret_port[[p]][order(-ret_port[[p]][,ii]),])[1:20] ## Seleect the top 20 sharp's
+  portsel <- row.names(ret_port[[p]][order(ret_port[[p]][,ii], decreasing = T),])[1:20] ## Seleect the top 20 sharp's
   portsel <- as.character(na.omit(portsel))
   select_port[[p]] <- portsel # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
-                           end = time(test_period)[nrow(test_period)]+180)
+                           end = time(test_period)[nrow(test_period)]+trading_days[pp])
   trading_window <- nrow(trading_period) - nrow(test_period)
-  betas_trading <- betas_formation %>% 
-    select(Pares, betas) %>% 
-    dplyr::filter(Pares %in% portsel)
-  Zm_trading <- Zm_fornation %>% select(portsel)
-  ############# Estimating the pairs ################
-  print("Estimating the pairs")
-  parestrade <-as.list(NULL)
-  for(j in 1:length(portsel)){
-    parestrade[[j]] <- cbind(trading_period[,grep(str_sub(portsel[j],end=6),names(trading_period))],
-                             trading_period[,grep(str_sub(portsel[j],start=-6),names(trading_period))])
-    names(parestrade)[j] <- portsel[j]
-  }
+  Zm_ci2_t <- Zm_ci2 %>% select(portsel)
   
+  ############# Estimating the pairs ################
+  print("Estimating the pairs T")
+  parestrade_ci1_t <-as.list(NULL)
+  for(j in 1:length(portsel)){
+    parestrade_ci1_t[[j]] <- cbind(trading_period[,grep(str_trim(str_sub(portsel[j],
+                                                                         end=6)),
+                                                        names(trading_period))],
+                                   trading_period[,grep(str_trim(str_sub(portsel[j],
+                                                                         start=-6)),
+                                                        names(trading_period))])
+    names(parestrade_ci1_t)[j] <- portsel[j]
+  }
   ### Estimating pairs
+  pares_trading <- list(NULL)
+  bt_t <- data.frame(NULL)
+  coint <- list(NULL)
   cl <- makeCluster(no_cores)
   for(i in 1:trading_window){
-    cat("\r", i, "of", trading_window,"\r")
-    parestrade_est <- lapply(parestrade, function(x) x[1:(nrow(test_period)+i),])
+    parestrade_est <- lapply(parestrade_ci1_t, function(x) x[1:(nrow(test_period)+i),])
+    cat("\r", i, "of", trading_window,"window",nrow(parestrade_est[[1]]),"\r")
     clusterExport(cl, "parestrade_est")
-    clusterEvalQ(cl, library(partialCI))
-    pares <- parLapply(cl,parestrade_est, function(x) fit.pci(x[,1],x[,2]))
-    
-    pares <- pares[!sapply(pares,is.null)]
-    pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))]
-    
-    #### Estimating ocult states
-    #print(paste0("Estimation of ocult states. Portfolio ",p))
-    paresRtested <- list(NULL)
-    paresRtested <- pares
-    paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
-    #rm(paresRtested)
+    clusterEvalQ(cl, library(egcm))
+    pares_trading <- parLapply(cl,parestrade_est, function(x) egcm(x[,2],x[,1]))
+    bt_t <- data.frame(c(bt_t,
+                         data.frame(beta=unlist(lapply(pares_trading, 
+                                                       function(x) x$beta)))))
+    pares_trading <- pares_trading[!sapply(pares_trading,is.null)]
+    coint[[i]] <- lapply(pares_trading,is.cointegrated)
     
     ### Norm M's
     #print(paste0("Normalizing the M. Portfolio",p))
-    Z_norm <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
+    Z_norm <- lapply(pares_trading, function(x) x$residuals/x$residuals.sd)
     Z_norm <- as.data.frame(Z_norm)
     colnames(Z_norm) <- gsub("\\."," ",names(Z_norm))
-    Zm_trading[nrow(test_period)+i,] <- Z_norm[nrow(Z_norm),]
+    Zm_ci2_t[nrow(test_period)+i,] <- Z_norm[nrow(Z_norm),]
   }
-
+  
+  ### sign of operations
+  #Zm_ci2_t <- Zm_ci2_t[(formation_windown[pp]+2):nrow(trading_period),]
+  sinal_t_ci2 <- matrix(data = rep(0,ncol(Zm_ci2_t)*nrow(Zm_ci2_t)),ncol = ncol(Zm_ci2_t),nrow = nrow(Zm_ci2_t))
+  sinal_t_ci2[1,1:ncol(sinal_t_ci2)] <- "Fora"
+  print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
+  sinal_t_ci2 <- sncalc(ncol(Zm_ci2_t),nrow(Zm_ci2_t),as.matrix(Zm_ci2_t), tr=tr, sinal=sinal_t_ci2)
+  sinal_t_ci2 <- as.data.frame(sinal_t_ci2) 
+  colnames(sinal_t_ci2) <- names(Zm_ci2_t)
+  sinal_t_ci2 %>% mutate_if(is.factor,as.character) -> sinal_t_ci2
+  ##########################
+  bt_t <- data.frame(pares = portsel,betas = apply(bt_t, 1, mean))
+  ############# Return Calc
+  invest_t_ci2 <- data.frame(matrix(data = rep(1,ncol(Zm_ci2_t)*nrow(Zm_ci2_t)),ncol = ncol(Zm_ci2_t),nrow = nrow(Zm_ci2_t)))
+  retorno_t_ci2 <- data.frame(matrix(data = rep(0,ncol(Zm_ci2_t)*nrow(Zm_ci2_t)),ncol = ncol(Zm_ci2_t),nrow = nrow(Zm_ci2_t)))
+  tt2 <- data.frame(matrix(data = rep(0,ncol(Zm_ci2_t)*nrow(Zm_ci2_t)),ncol = ncol(Zm_ci2_t),nrow = nrow(Zm_ci2_t)))
+  results <- NULL
+  par_est <- data.frame(NULL)
+  for(j in 1:length(pares_trading)){
+    par_est <- parestrade_ci1_t[[j]]
+    bt <- bt_t %>% dplyr::filter(pares == portsel[j]) %>% select(betas)
+    results <- returcalc(as.matrix(sinal_t_ci2[,j]),
+                         as.matrix(par_est),betas = as.numeric(bt),
+                         invest = invest_t_ci2[,j])
+    invest_t_ci2[,j] <- results$invest
+    retorno_t_ci2[,j] <- results$retorno
+    tt2[,j] <- results$tt
   }
- }
+  tt2[1,1:ncol(tt2)] <- "Fora"
+  colnames(invest_t_ci2) <- names(pares_trading)
+  colnames(retorno_t_ci2) <- names(pares_trading)
+  colnames(tt2) <- names(pares_trading)
+  
+  
+  ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
+  print(paste0("Calculating return and sharpe. Portfolio ",p))
+  portret_t <- as.data.frame(matrix(data = rep(0,ncol(Zm_ci2_t)*3),ncol = ncol(Zm_ci2_t),nrow = 3))
+  for(f in 1:ncol(invest_t_ci2)){
+    for(i in nrow(ttf_ci2):nrow(tt2)){
+      if(tt2[i,f] == "Abriu"){
+        portret_t[1,f] <- (tail(cumprod(retorno_t_ci2[i:nrow(retorno_t_ci2),f]+1),1)-1)*100
+        portret_t[2,f] <- sd(invest_t_ci2[i:nrow(retorno_t_ci2),f])
+        portret_t[3,f] <- portret_t[1,f]/portret_t[2,f]
+        colnames(portret_t)[f] <- names(pares_trading)[f]
+        break
+      } else{
+        portret_t[1,f] <- 0
+        portret_t[2,f] <- 0
+        portret_t[3,f] <- 0
+        colnames(portret_t)[f] <- names(pares_trading)[f]
+        next
+      }
+    }
+  }
+  portret_t <- t(portret_t)
+  colnames(portret_t) <- c("Retorno Total","Desvio Padrão","Sharpe")
+  
+  if(ii == 1){
+    ret_aux[[1]] <- portret_t ## Retornos Totais
+    trades[[1]] <- retorno_t_ci2
+    names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+    names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+  } else{
+    ret_aux[[2]] <- portret_t ## Retornos Totais
+    trades[[2]] <- retorno_t_ci2
+    names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
+    names(trades)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
+  }
+  trading_return[[p]] <- ret_aux
+  returns[[p]] <- trades
+  portfolios[[p]] <- invest_t_ci2
+}  
+  }
+  save_data[[pp]][[1]] <- trading_return
+  save_data[[pp]][[2]] <- returns
+  save_data[[pp]][[3]] <- portfolios
+  names(save_data[[pp]]) <- paste0("Formation Window",formation_windown[pp]," dias uteis")
+  saveRDS(save_data,file=paste0(getwd(),"/resultados/pairsci2_fw_",
+                                names(formation_windown)[pp]))
 }
-
-
-
+  
+  
+  
+  
