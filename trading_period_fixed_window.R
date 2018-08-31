@@ -1,7 +1,7 @@
 for(ii in c(1,3)){
   if(ii == 1){
-    print("Trading Period top 20 return")
-  } else {print("Trading Period top 20 sharp")}
+    cat("\n","Trading Period top 20 return")
+  } else {cat("\n","Trading Period top 20 sharp")}
   portsel <- row.names(ret_port[[p]][order(-ret_port[[p]][,ii]),])[1:20] ## Seleect the top 20 sharp's
   portsel <- as.character(na.omit(portsel))
   select_port[[p]] <- portsel # testing if the window is complete
@@ -14,7 +14,7 @@ for(ii in c(1,3)){
     dplyr::filter(Pares %in% portsel)
   Zm_trading <- Zm_fornation %>% select(portsel)
   ############# Estimating the pairs ################
-  print("Estimating the pairs")
+  cat("\n","Estimating the pairs")
   parestrade <-as.list(NULL)
   for(j in 1:length(portsel)){
     parestrade[[j]] <- cbind(trading_period[,grep(str_sub(portsel[j],end=6),names(trading_period))],
@@ -52,7 +52,7 @@ for(ii in c(1,3)){
   ### sign of operations
   sinal <- matrix(data = rep(0,ncol(Zm_trading)*nrow(Zm_trading)),ncol = ncol(Zm_trading),nrow = nrow(Zm_trading))
   sinal[1,1:ncol(sinal)] <- "Fora"
-  print(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
+  cat("\n",paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
   sinal <- sncalc(ncol(Zm_trading),nrow(Zm_trading),as.matrix(Zm_trading), tr=tr, sinal=sinal)
   sinal <- as.data.frame(sinal) 
   colnames(sinal) <- names(Zm_trading)
@@ -79,7 +79,7 @@ for(ii in c(1,3)){
   
   
   ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-  print(paste0("Calculating return and sharpe. Portfolio ",p))
+  cat("\n",paste0("Calculating return and sharpe. Portfolio ",p))
   portret <- as.data.frame(matrix(data = rep(0,ncol(Zm_trading)*3),ncol = ncol(Zm_trading),nrow = 3))
   for(f in 1:length(invest_t)){
     for(i in (formation_windown[pp]+2):nrow(tt2)){

@@ -46,13 +46,13 @@ for(pp in 1:length(formation_windown)){
                         else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
 
 datas <- time(test_period)
-
+#test_period <- test_period[,1:30]
 
 ##### Estimating
 cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
-cat("Estimating Pairs")
+cat("\n","Estimating Pairs",append = T)
 
 pares_pp <- parLapply(cl,data.frame(test_period),function(x) apply(test_period,2, 
                                                     function(y) if(x!=y){egcm(y, x, urtest = "pp", p.value = 0.05)}))
@@ -70,7 +70,7 @@ pares_pgff <- pares_pgff[!sapply(pares_pgff,is.null)]
 stopCluster(cl)
 
 ############# Testing for cointegration #####################
-cat("Pairs Testing")
+cat("\n","Pairs Testing","\r",append = T)
 pares_coint_pp <- pares_pp[sapply(pares_pp, is.cointegrated)]
 pares_coint_pp <- pares_coint_pp[sapply(pares_coint_pp,is.ar1)]
 pares_coint_pgff <- pares_pgff[sapply(pares_pgff,is.cointegrated)]
@@ -102,7 +102,7 @@ pares_coint_ci2s <- pares_coint_pp[pares_coint_ci2$nomes_pp]
 
 ################################################################
 ### Signal Calc
-cat("Signal Calc")
+cat("\r","Signal Calc","\r",append = T)
 
 Zm_ci2 <- sapply(pares_coint_ci2s, function(x) x$residuals/x$residuals.sd)
 Zm_ci2 <- data.frame(Zm_ci2)
@@ -117,7 +117,7 @@ colnames(sinal_t_ci2) <- names(Zm_ci2)
 ################################################################
 ### Agruping the data by pair
 
-cat("Agruping the data by pair")
+cat("\r","Agruping the data by pair","\r",append = T)
 parestrade_ci2 <- list(NULL)
 
 for(j in 1:ncol(sinal_t_ci2)){
@@ -133,7 +133,7 @@ for(j in 1:ncol(sinal_t_ci2)){
 
 ###################################################
 ### Return Calc
-cat("Return Calc")
+cat("\r","Return Calc","\r",append = T)
 
 betas_ci2 <- plyr::ldply(pares_coint_ci2s, function(x) x$beta)
 invest_f_ci2 <- data.frame(matrix(data = rep(1,ncol(Zm_ci2)*nrow(Zm_ci2)),ncol = ncol(Zm_ci2),nrow = nrow(Zm_ci2)))
@@ -156,7 +156,7 @@ colnames(ttf_ci2) <- names(parestrade_ci2)
   
 ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
 #####################################################################
-cat(paste0("Calculating return and sharpe. Portfolio ",p))
+cat("\r",paste0("Calculating return and sharpe. Portfolio ",p),"\r",append = T)
 portret_t_ci2 <- as.data.frame(matrix(data = rep(0,ncol(Zm_ci2)*3),
                                       ncol = ncol(Zm_ci2),nrow = 3))
 for(f in 1:length(invest_f_ci2)){
@@ -174,12 +174,12 @@ names(ret_port)[p] <- paste0("Return Formation Period ",p)
 #####################################################
 ############### Periodo de Trading ##################
 #####################################################
-cat("Periodo de Trading")
+cat("\r","Periodo de Trading","\r",append = T)
 select_port <- list(NULL)
 for(ii in c(1,3)){
   if(ii == 1){
-    cat("Trading Period top 20 return")
-  } else {cat("Trading Period top 20 sharp")}
+    cat("\n","Trading Period top 20 return","\r",append = T)
+  } else {cat("\n","Trading Period top 20 sharp","\r",append = T)}
   portsel <- row.names(ret_port[[p]][order(ret_port[[p]][,ii], decreasing = T),])[1:20] ## Seleect the top 20 sharp's
   portsel <- as.character(na.omit(portsel))
   select_port[[p]] <- portsel # testing if the window is complete
@@ -190,7 +190,7 @@ for(ii in c(1,3)){
   Zm_ci2_t <- Zm_ci2 %>% select(portsel)
   
   ############# Estimating the pairs ################
-  cat("Estimating the pairs T")
+  cat("\n","Estimating the pairs Trading","\r",append = T)
   parestrade_ci1_t <-as.list(NULL)
   for(j in 1:length(portsel)){
     parestrade_ci1_t[[j]] <- cbind(trading_period[,grep(str_trim(str_sub(portsel[j],
@@ -208,7 +208,7 @@ for(ii in c(1,3)){
   cl <- makeCluster(no_cores)
   for(i in 1:trading_window){
     parestrade_est <- lapply(parestrade_ci1_t, function(x) x[1:(nrow(test_period)+i),])
-    cat("\r", i, "of", trading_window,"window",nrow(parestrade_est[[1]]),"\r")
+    cat("\r", i, "of", trading_window,"\r",append = T)
     clusterExport(cl, "parestrade_est")
     clusterEvalQ(cl, library(egcm))
     pares_trading <- parLapply(cl,parestrade_est, function(x) egcm(x[,2],x[,1]))
@@ -230,7 +230,7 @@ for(ii in c(1,3)){
   #Zm_ci2_t <- Zm_ci2_t[(formation_windown[pp]+2):nrow(trading_period),]
   sinal_t_ci2 <- matrix(data = rep(0,ncol(Zm_ci2_t)*nrow(Zm_ci2_t)),ncol = ncol(Zm_ci2_t),nrow = nrow(Zm_ci2_t))
   sinal_t_ci2[1,1:ncol(sinal_t_ci2)] <- "Fora"
-  cat(paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
+  cat("\n",paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p),"\r",append = T)
   sinal_t_ci2 <- sncalc(ncol(Zm_ci2_t),nrow(Zm_ci2_t),as.matrix(Zm_ci2_t), tr=tr, sinal=sinal_t_ci2)
   sinal_t_ci2 <- as.data.frame(sinal_t_ci2) 
   colnames(sinal_t_ci2) <- names(Zm_ci2_t)
@@ -260,7 +260,7 @@ for(ii in c(1,3)){
   
   
   ################ Cáculo dos Retornos Totais, Desvios Padrões e Sharpe.
-  cat(paste0("Calculating return and sharpe. Portfolio ",p))
+  cat("\n",paste0("Calculating return and sharpe. Portfolio ",p),"\r",append = T)
   portret_t <- as.data.frame(matrix(data = rep(0,ncol(Zm_ci2_t)*3),ncol = ncol(Zm_ci2_t),nrow = 3))
   for(f in 1:ncol(invest_t_ci2)){
     for(i in nrow(ttf_ci2):nrow(tt2)){
