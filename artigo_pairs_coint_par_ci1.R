@@ -31,6 +31,7 @@ no_cores <- detectCores()
 ### Set de window estimation - rolling regressions
 save_data <- list(NULL)
 formation_windown <- c(41,62,125,251)
+names(formation_windown) <- c("2m","3m","6m","1Y")
 trading_days <- c(60,120,180,360)
 for(pp in 1:length(formation_windown)){
   ret_aux <- list(NULL)
@@ -296,10 +297,10 @@ returns[[p]] <- trades
 portfolios[[p]] <- invest_t_ci1
     }  
   }
- save_data[[pp]][[1]] <- trading_return
- save_data[[pp]][[2]] <- returns
- save_data[[pp]][[3]] <- portfolios
- names(save_data[[pp]]) <- paste0("Formatrion Window",formation_windown[pp]," dias uteis")
+ save_data[[1]] <- trading_return
+ save_data[[2]] <- returns
+ save_data[[3]] <- portfolios
+ names(save_data) <- paste0("Formatrion Window",formation_windown[pp]," dias uteis")
  saveRDS(save_data,file=paste0(getwd(),"/resultados/pairsci1_fw_",
                                names(formation_windown)[pp]))
 }
