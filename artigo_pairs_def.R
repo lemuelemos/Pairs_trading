@@ -37,7 +37,8 @@ resultados_por_tr <- list(NULL)
 threshold <- matrix(c(1,1,0.5,0),2,2)
 formation_windown <- c(251,503,1007)
 names(formation_windown) <- c("1Y","2Y","4Y")
-trading_days <- c(180,720,1440)
+trading_days <- c(90,180,360)
+rolling_window <- c(63,126,252)
 for(pp in 1:length(formation_windown)){
   ret_port <- as.list(NULL)
   pairs_est <- list(NULL)
@@ -49,7 +50,7 @@ for(pp in 1:length(formation_windown)){
   ret_aux <- as.list(NULL)
   trades <- list(NULL)
   returns <- list(NULL)
-  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=(formation_windown[pp]+1))
+  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=(rolling_window[pp]))
   resultados_por_tr <- list(NULL)
   for(kk in 1:nrow(threshold)){
     tr <- threshold[kk,]
