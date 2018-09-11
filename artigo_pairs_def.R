@@ -35,12 +35,13 @@ dir.create(file.path(getwd(), "resultados"))
 
 resultados_por_tr <- list(NULL)
 threshold <- matrix(c(1,1,0.5,0),2,2)
-formation_windown <- c(125,251,503,1007)
-names(formation_windown) <- c("6m","1Y","2Y","4Y")
-trading_days <- c(180,360,720,1440)
+formation_windown <- c(251,503,1007)
+names(formation_windown) <- c("1Y","2Y","4Y")
+trading_days <- c(180,720,1440)
 for(pp in 1:length(formation_windown)){
   ret_port <- as.list(NULL)
   pairs_est <- list(NULL)
+  pairs_est_tested <- list(NULL)
   trading_return <- as.list(NULL)
   select_port <- as.list(NULL)
   retornos <- as.list(NULL)
@@ -50,7 +51,6 @@ for(pp in 1:length(formation_windown)){
   returns <- list(NULL)
   window_test <- seq(1,nrow(ibrx_2008_2017_70),by=(formation_windown[pp]+1))
   resultados_por_tr <- list(NULL)
-  
   for(kk in 1:nrow(threshold)){
     tr <- threshold[kk,]
     for(p in seq_along(window_test)){
@@ -89,12 +89,12 @@ pares <- pares[!sapply(pares, function(x) is.na(x$rho.se))] ### Retirando os par
                           #max(time_window[[p]]),"_portfolio",p,"_fmw_",
                           #names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
 
-pairs_est[[p]][[1]] <- pares
+pairs_est[[p]] <- pares
 #### Taking the pairs with R square greater than 0.5
 cat("\r",paste0("Taking the pais with R2>0.5. Portfolio ",p))
 paresR <- pares[sapply(pares,function(x) x$pvmr > 0.5)]
 paresR <- paresR[sapply(paresR,function(x) x$rho > 0.5)]
-rm(pares)
+#rm(pares)
 
 ### Testing partial Cointegration
 cat("\r",paste0("Testing for partial coitegration. Portfolio ",p))
@@ -104,14 +104,14 @@ clusterEvalQ(cl, library(partialCI))
 paresRtested <- paresR[parSapply(cl,paresR, 
                                  FUN = function(x) which.hypothesis.pcitest(test.pci(x))=="PCI")]
 stopCluster(cl)
-rm(paresR)
+#rm(paresR)
 
 #saveRDS(paresRtested,file=paste0(getwd(),"/resultados/pairRtested_",
                           #min(time_window[[p]]),"_to_",
                           #max(time_window[[p]]),"_portfolio",p,"_fmw_",
                           #names(formation_windown)[pp],"_tr_(",tr[1],",",tr[2],")"))
 
-pairs_est[[p]][[2]] <- paresRtested
+pairs_est_tested[[p]] <- paresRtested
 ### Estimation of ocult states
 cat("\r",paste0("Estimation of ocult states. Portfolio ",p))
 paresRtestedM <- lapply(paresRtested, function(x) statehistory.pci(x))
@@ -124,7 +124,7 @@ cat("\r",paste0("Normalizing the M. Portfolio",p))
 Zm_fornation <- lapply(paresRtestedM, function(x) x$M/sd(x$M))
 Zm_fornation <- as.data.frame(Zm_fornation)
 colnames(Zm_fornation) <- gsub("\\."," ",names(Zm_fornation))
-rm(paresRtestedM)
+#rm(paresRtestedM)
 
 ### sign of operations
 cat("\r",paste0("Sign for operations - threshold[",tr[1],",",tr[2],"]. Portolio ",p))
@@ -190,6 +190,8 @@ if(estimation_method == "fixed"){
 #### Salvando Dados Importantes
     source('res_data_est.R')
     saveRDS(pairs_est,file = paste0(getwd(),"/resultados/pairs_fmw_",
+                                    names(formation_windown)[pp],"_tr(",tr[1],",",tr[2],")"))
+    saveRDS(pairs_est_tested,file = paste0(getwd(),"/resultados/pairs_tested_fmw_",
                                     names(formation_windown)[pp],"_tr(",tr[1],",",tr[2],")"))
     }
 }

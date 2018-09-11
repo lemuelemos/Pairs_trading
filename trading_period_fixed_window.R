@@ -7,7 +7,7 @@ for(ii in c(1,3)){
   select_port[[p]] <- portsel # testing if the window is complete
   trading_period <- window(ibrx_2008_2017_70, # Select the data
                            start = time(test_period)[1],
-                           end = time(test_period)[nrow(test_period)]+trading_days[pp])
+                           end = time(test_period)[nrow(test_period)]+trading_days[1])
   trading_window <- nrow(trading_period) - nrow(test_period)
   betas_trading <- betas_formation %>% 
     select(Pares, betas) %>% 
