@@ -161,7 +161,7 @@ cat("\r",paste0("Calculating return and sharpe. Portfolio ",p),"\r",append = T)
 portret_t_ci2 <- as.data.frame(matrix(data = rep(0,ncol(Zm_ci2)*3),
                                       ncol = ncol(Zm_ci2),nrow = 3))
 for(f in 1:length(invest_f_ci2)){
-  portret_t_ci2[1,f] <- ((invest_f_ci2[nrow(invest_f_ci2),f]/invest_f_ci2[1,f])-1)*100
+  portret_t_ci2[1,f] <- (tail(invest_f_ci2[,f],1)-1)*100
   portret_t_ci2[2,f] <- sd(invest_f_ci2[,f])
   portret_t_ci2[3,f] <- portret_t_ci2[1,f]/portret_t_ci2[2,f]
   colnames(portret_t_ci2)[f] <- names(parestrade_ci2)[f]
