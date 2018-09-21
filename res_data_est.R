@@ -3,8 +3,8 @@
 resum_results <- list(NULL)
 resum_results[[1]] <- t(sapply(trading_return, function(x) x[[1]] %>% apply(.,2,mean)))
 resum_results[[2]] <- t(sapply(trading_return, function(x) x[[2]] %>% apply(.,2,mean)))
-names(resum_results)[1] <- "Top 20 Sharp"
-names(resum_results)[2] <- "Top 20 Retur"
+names(resum_results)[1] <- "Top 20 Return"
+names(resum_results)[2] <- "Top 20 Sharp"
 
 r_names_sharp <- str_sub(sapply(trading_return, function(x) names(x)[1]), end = -19)
 r_names_retur <- str_sub(sapply(trading_return, function(x) names(x)[2]), end = -20)

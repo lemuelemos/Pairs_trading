@@ -54,7 +54,7 @@ for(pp in 1:length(formation_windown)){
 cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
-cat("\n","Estimating Pairs")
+cat("\n",paste0("Estimating Pairs Period - ",min(time(test_period))," to ",max(time(test_period))),append = T)
 
 pares_adf <- parLapply(cl,
                        data.frame(test_period),

@@ -29,21 +29,21 @@ no_cores <- detectCores()
 
 ### Set de window estimation - rolling regressions
 save_data <- list(NULL)
-formation_windown <- c(42,63,126,252)
+formation_windown <- c(41,62,125,251)
 names(formation_windown) <- c("2m","3m","6m","1Y")
 trading_days <- c(60,120,180,360)
-for(pp in 1:length(formation_windown)){
+for(pp in 4){
   ret_aux <- list(NULL)
   ret_port <- list(NULL)
   trades <- list(NULL)
   trading_return <- list(NULL)
   returns <- list(NULL)
   portfolios <- list(NULL)
-  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=formation_windown[pp])
+  window_test <- seq(1,nrow(ibrx_2008_2017_70),by=formation_windown[pp]+1)
   for(p in seq_along(window_test)){
   test_period <- window(ibrx_2008_2017_70,
                         start=time(ibrx_2008_2017_70)[window_test[p]],
-                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){time(ibrx_2008_2017_70)[nrow(ibrx_2008_2017_70)]}
+                        end=if(is.na(time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]])){break}
                         else{time(ibrx_2008_2017_70)[window_test[p]+formation_windown[pp]]})
 
 datas <- time(test_period)
@@ -53,7 +53,7 @@ datas <- time(test_period)
 cl <- makeCluster(no_cores)
 clusterExport(cl, "test_period")
 clusterEvalQ(cl, library(egcm))
-cat("\n","Estimating Pairs",append = T)
+cat("\n",paste0("Estimating Pairs Period - ",min(time(test_period))," to ",max(time(test_period))),append = T)
 
 pares_pp <- parLapply(cl,data.frame(test_period),function(x) apply(test_period,2, 
                                                     function(y) if(x!=y){egcm(y, x, urtest = "pp", p.value = 0.05)}))
@@ -302,7 +302,7 @@ for(ii in c(1,3)){
   save_data[[1]] <- trading_return
   save_data[[2]] <- returns
   save_data[[3]] <- portfolios
-  names(save_data[[pp]]) <- paste0("Formation Window",formation_windown[pp]," dias uteis")
+  names(save_data) <- paste0("Formation Window",formation_windown[pp]," dias uteis")
   saveRDS(save_data,file=paste0(getwd(),"/resultados/pairsci2_fw_",
                                 names(formation_windown)[pp]))
 }

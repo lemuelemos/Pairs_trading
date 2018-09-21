@@ -99,17 +99,17 @@ for(ii in c(1,3)){
     }
   }
   portret <- t(portret)
-  colnames(portret) <- c("Retorno Total","Desvio Padrão","Sharpe")
+  colnames(portret) <- c("Total Return","SD","Sharpe")
   if(ii == 1){
     ret_aux[[1]] <- portret ## Retornos Totais
     trades[[1]] <- retorno_t
-    names(ret_aux)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
-    names(trades)[1] <- paste0("Return Trading Period ",p, ". The top 20 Return")
+    names(ret_aux)[1] <- paste0("Return Trading Period ",p, " from top 20 Return")
+    names(trades)[1] <- paste0("Return Trading Period ",p, " from top 20 Return")
   } else{
     ret_aux[[2]] <- portret ## Retornos Totais
     trades[[2]] <- retorno_t
-    names(ret_aux)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
-    names(trades)[2] <- paste0("Return Trading Period ",p, ". The top 20 Sharp")
+    names(ret_aux)[2] <- paste0("Return Trading Period ",p, " from top 20 Sharp")
+    names(trades)[2] <- paste0("Return Trading Period ",p, " from top 20 Sharp")
   }
   trading_return[[p]] <- ret_aux
   returns[[p]] <- trades
