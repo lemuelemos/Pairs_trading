@@ -73,7 +73,7 @@ for(pp in 1:length(formation_windown)){
   clusterEvalQ(cl, library(partialCI))
   pares <- parLapply(cl,test_period_est,
                      function(x) apply(test_period_est,2, 
-                                                      function(y) if(x!=y){fit.pci(x,y)}))
+                                                      function(y) if(x!=y){try(fit.pci(x,y))}))
   stopCluster(cl)
   
   pares <- unlist(pares, recursive = F)
