@@ -30,7 +30,8 @@ rm(Nomes)
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
-resultados <- list(NULL)
+resultados1 <- NULL
+resultados2 <- NULL
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
 for(i in sem_ini){
   if(date(Dados_2008_2018)[i]+1642 <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
@@ -117,8 +118,8 @@ for(i in sem_ini){
   portret$R2 <- sapply(pares_formation, function(x) x$pvmr)
   portret <- as_tibble(portret)
   
-  resultados[[1]][[length(resultados[[1]])+1]] <- portret
-  names(resultados[[1]][[length(resultados[[1]])]]) <- paste0("Perido de Formação ",
+  resultados1[[length(resultados1)+1]]<- portret
+  names(resultados1)[length(resultados1)] <- paste0("Perido de Formação ",
                                                               datas_form)
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
@@ -217,12 +218,14 @@ for(i in sem_ini){
     portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
     portret_trading <- as_tibble(portret_trading)
     
-    resultados[[2]][[length(resultados[[2]])+1]] <- portret_trading
-    names(resultados[[2]][[length(resultados[[2]])]]) <- paste0("Perido de Trading ",
-                                                                datas_trading)
+    resultados2[[length(resultados2)+1]]<- portret_trading
+    names(resultados2)[[length(resultados2)]] <- paste0("Perido de Formação ",
+                                                              datas_trading)
 
 }
 
+resultados[[1]] <- resultados1
+resultados[[2]] <- resultados2
 names(resultados) <- c("Periodo de Formação","Periodo de Trading")
 
 
