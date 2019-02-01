@@ -30,18 +30,18 @@ rm(Nomes)
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
-
+resultados <- list(NULL)
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
-for(i in sem_ini[13]){
+for(i in sem_ini){
   if(date(Dados_2008_2018)[i]+1642 <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
   datas_form <- paste0(date(Dados_2008_2018)[i],"/",date(Dados_2008_2018)[i]+1460)
   dados_per_form <- Dados_2008_2018[datas_form]
   print(paste0("Periodo de Formação ",datas_form))
   
-  no_cores <- detectCores()
+  no_cores <- detectCores() - 1
   pares <- gtools::permutations(n=ncol(dados_per_form),
                                 2,colnames(dados_per_form))
-  cl <- makeCluster(no_cores)
+  cl <- makeCluster(no_cores) 
   registerDoParallel(cl)
   pares_coint <- foreach(i=1:nrow(pares),
                          .errorhandling = "pass", 
@@ -114,11 +114,16 @@ for(i in sem_ini[13]){
   portret$Retorno <- sapply(resultados_form, function(x) ((tail(x$invest,1)/1)-1)*100)
   portret$Desvio <- sapply(resultados_form, function(x) sd(x$invest))
   portret$Sharp <- portret$Retorno/portret$Desvio
+  portret$R2 <- sapply(pares_formation, function(x) x$pvmr)
   portret <- as_tibble(portret)
   
+  resultados[[1]][[length(resultados[[1]])+1]] <- portret
+  names(resultados[[1]][[length(resultados[[1]])]]) <- paste0("Perido de Formação ",
+                                                              datas_form)
+  #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
   ###### partir de cada ativo na ponta dependente  ######
-  
+  #######################################################
   
   lapply(unique(str_sub(portret$Pares, end = -7)), function(x){
     portret %>%
@@ -141,7 +146,7 @@ for(i in sem_ini[13]){
   
   ###### Estimando Periodo de trading
   
-  print("Trading")
+  print("Estimando")
   pares_coint_trading <- list(NULL)
   cl <- makeCluster(no_cores)
   registerDoParallel(cl)
@@ -182,16 +187,20 @@ for(i in sem_ini[13]){
   betas <- list(NULL)
   for (k in 1:nrow(pares_trading_20)) {
     b <- lapply(pares_coint_trading, function(x) x[[k]]$beta) ### Função para extrair
-    betas[[k]] <- mean(unlist(b))                             ### os betas médios       
+    betas[[k]] <- tibble(Beta = mean(unlist(b)))              ### os betas médios       
+  }
+  for (k in 1:nrow(pares_trading_20)) {
+    b <- lapply(pares_coint_trading, function(x) x[[k]]$beta) ### Função para extrair
+    betas[[k]][,2] <- tibble(DP = sd(unlist(b)))              ### os desvios dos betas       
   }
   
   ###### Realizando os tradings
-  
+  print("Trading")
   for(j in 1:nrow(pares_trading_20)){
     invest <- c(1,rep(0,length(M_norm_t[[1]])-1))
     results <- returcalc(sinal = M_norm_t[[j]],
                          par = pares_datas[[j]],
-                         betas =  betas[[j]],
+                         betas =  betas[[j]]$Beta,
                          tr = tr,
                          invest = invest)
     resultados_trading[[j]] <- results
@@ -205,11 +214,16 @@ for(i in sem_ini[13]){
     portret_trading$Retorno <- sapply(resultados_trading, function(x) ((tail(x$invest,1)/1)-1)*100)
     portret_trading$Desvio <- sapply(resultados_trading, function(x) sd(x$invest))
     portret_trading$Sharp <- portret_trading$Retorno/portret_trading$Desvio
+    portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
     portret_trading <- as_tibble(portret_trading)
+    
+    resultados[[2]][[length(resultados[[2]])+1]] <- portret_trading
+    names(resultados[[2]][[length(resultados[[2]])]]) <- paste0("Perido de Trading ",
+                                                                datas_trading)
 
 }
 
-
+names(resultados) <- c("Periodo de Formação","Periodo de Trading")
 
 
 
