@@ -32,6 +32,7 @@ rm(Nomes)
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
 resultados1 <- NULL
 resultados2 <- NULL
+resultados <- NULL
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
 for(i in sem_ini){
   if(date(Dados_2008_2018)[i]+1642 <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
@@ -39,7 +40,7 @@ for(i in sem_ini){
   dados_per_form <- Dados_2008_2018[datas_form]
   print(paste0("Periodo de Formação ",datas_form))
   
-  no_cores <- detectCores() - 1
+  no_cores <- detectCores() - 2
   pares <- gtools::permutations(n=ncol(dados_per_form),
                                 2,colnames(dados_per_form))
   cl <- makeCluster(no_cores) 
@@ -227,7 +228,7 @@ for(i in sem_ini){
 resultados[[1]] <- resultados1
 resultados[[2]] <- resultados2
 names(resultados) <- c("Periodo de Formação","Periodo de Trading")
-
+saveRDS(resultados,"~/Pairs_trading/resultados.rds")
 
 
 
