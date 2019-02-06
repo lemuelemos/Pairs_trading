@@ -21,3 +21,5 @@ par_estim threshold[1,0.5]_,1Y.rds
 capitulo_de_amostra_Data_Science_do_Zero.pdf
 clegg2017.pdf
 resultados.rds
+resultados_ci.rds
+resultados_pci.rds

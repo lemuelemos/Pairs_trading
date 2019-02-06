@@ -9,8 +9,8 @@ library(partialCI)
 library(lubridate)
 
 ##### Organizando os Dados
-Rcpp::sourceCpp("cpp_return.cpp") ### Código Auxiliar em C++ para estimar os retornos
-Dados_2000_2019 <- read_excel("Dados_2000_2019.xlsx")
+Rcpp::sourceCpp("C:/Users/Mol/Desktop/Lemuel Pair/cpp_return.cpp") ### Código Auxiliar em C++ para estimar os retornos
+Dados_2000_2019 <- read_excel("C:/Users/Mol/Desktop/Lemuel Pair/Dados_2000_2019.xlsx")
 Dados_2000_2019$Dates <- as.Date(Dados_2000_2019$Dates)
 Dados_2000_2019 %>%
   map_if(is.character,as.numeric) %>%
@@ -20,7 +20,7 @@ Dados_2000_2019 %>%
 Dados_2008_2018 <- Dados_2000_2019["2008/2018"]
 rm(Dados_2000_2019)
 Dados_2008_2018[,apply(Dados_2008_2018,2,
-                      function(x) any(is.na(x)) == F), 
+                       function(x) any(is.na(x)) == F), 
                 drop = F] -> Dados_2008_2018
 
 Nomes <- colnames(Dados_2008_2018) ## Taking the names of equity's
@@ -36,23 +36,23 @@ resultados <- NULL
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
 for(i in sem_ini){
   if(date(Dados_2008_2018)[i]+1642 <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
-  datas_form <- paste0(date(Dados_2008_2018)[i],"/",date(Dados_2008_2018)[i]+1460)
-  dados_per_form <- Dados_2008_2018[datas_form]
-  print(paste0("Periodo de Formação ",datas_form))
-  
-  no_cores <- detectCores() 
-  pares <- gtools::permutations(n=ncol(dados_per_form),
-                                2,colnames(dados_per_form))
-  cl <- makeCluster(no_cores) 
-  registerDoParallel(cl)
-  pares_coint <- foreach(i=1:nrow(pares),
-                         .errorhandling = "pass", 
-                         .packages = "partialCI") %dopar%{
-                           fit.pci(dados_per_form[,pares[i,1]],dados_per_form[,pares[i,2]], 
-                                   pci_opt_method = "twostep")
-                         }
-  stopCluster(cl)
-} else{break}
+    datas_form <- paste0(date(Dados_2008_2018)[i],"/",date(Dados_2008_2018)[i]+1460)
+    dados_per_form <- Dados_2008_2018[datas_form]
+    print(paste0("Periodo de Formação ",datas_form))
+    
+    no_cores <- detectCores() - 2
+    pares <- gtools::permutations(n=ncol(dados_per_form),
+                                  2,colnames(dados_per_form))
+    cl <- makeCluster(no_cores) 
+    registerDoParallel(cl)
+    pares_coint <- foreach(i=1:nrow(pares),
+                           .errorhandling = "pass", 
+                           .packages = "partialCI") %dopar%{
+                             fit.pci(dados_per_form[,pares[i,1]],dados_per_form[,pares[i,2]], 
+                                     pci_opt_method = "twostep")
+                           }
+    stopCluster(cl)
+  } else{break}
   
   ###### Retirando Pares co rho e R2 maior que 0.5
   
@@ -99,10 +99,10 @@ for(i in sem_ini){
   for(j in 1:length(pares_formation)){
     invest <- c(1,rep(0,nrow(dados_per_form)-1))
     results <- returcalc(sinal = M_norm[[j]],
-                                 par = pares_datas[[j]],
-                                 betas =  betas[j],
-                                 tr = tr,
-                                 invest = invest)
+                         par = pares_datas[[j]],
+                         betas =  betas[j],
+                         tr = tr,
+                         invest = invest)
     resultados_form[[j]] <- results
   }
   names(resultados_form) <- pares_parcial_coint
@@ -121,7 +121,8 @@ for(i in sem_ini){
   
   resultados1[[length(resultados1)+1]]<- portret
   names(resultados1)[length(resultados1)] <- paste0("Perido de Formação ",
-                                                              datas_form)
+                                                    datas_form)
+  
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
   ###### partir de cada ativo na ponta dependente  ######
@@ -159,8 +160,8 @@ for(i in sem_ini){
                                      fit.pci(dados_per_trading[1:k,str_trim(str_sub(x,end = -7))],
                                              dados_per_trading[1:k,str_trim(str_sub(x, start = -6))],
                                              pci_opt_method = "twostep")}
-                           )
-                         }
+                                   )
+                                 }
   stopCluster(cl)
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
@@ -207,28 +208,27 @@ for(i in sem_ini){
                          invest = invest)
     resultados_trading[[j]] <- results
   }
-   
+  
   ###### Realizando Trades
   
-    print("Cáculo dos Sharpes")
-    portret_trading <- NULL
-    portret_trading$Pares <- pares_trading_20$Pares
-    portret_trading$Retorno <- sapply(resultados_trading, function(x) ((tail(x$invest,1)/1)-1)*100)
-    portret_trading$Desvio <- sapply(resultados_trading, function(x) sd(x$invest))
-    portret_trading$Sharp <- portret_trading$Retorno/portret_trading$Desvio
-    portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
-    portret_trading <- as_tibble(portret_trading)
-    
-    resultados2[[length(resultados2)+1]]<- portret_trading
-    names(resultados2)[[length(resultados2)]] <- paste0("Perido de Formação ",
-                                                              datas_trading)
-
+  print("Cáculo dos Sharpes")
+  portret_trading <- NULL
+  portret_trading$Pares <- pares_trading_20$Pares
+  portret_trading$Retorno <- sapply(resultados_trading, function(x) ((tail(x$invest,1)/1)-1)*100)
+  portret_trading$Desvio <- sapply(resultados_trading, function(x) sd(x$invest))
+  portret_trading$Sharp <- portret_trading$Retorno/portret_trading$Desvio
+  portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
+  portret_trading <- as_tibble(portret_trading)
+  
+  resultados2[[length(resultados2)+1]]<- portret_trading
+  names(resultados2)[[length(resultados2)]] <- paste0("Periodo de Trading ",date(Dados_2008_2018)[i]+1461,"/",
+                                                      date(Dados_2008_2018)[i]+1642)
+  
 }
 
 resultados[[1]] <- resultados1
 resultados[[2]] <- resultados2
 names(resultados) <- c("Periodo de Formação","Periodo de Trading")
-saveRDS(resultados,"~/Pairs_trading/resultados.rds")
-
+saveRDS(resultados,"C:/Users/Mol/Desktop/Lemuel Pair/resultados_pci.rds")
 
 
