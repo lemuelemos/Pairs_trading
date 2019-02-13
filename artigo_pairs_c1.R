@@ -33,10 +33,13 @@ rm(Nomes)
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
+#pares_sele_crit <- "top_sharp"
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
-for(i in sem_ini){
-  if(date(Dados_2008_2018)[i]+1642 <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
-    datas_form <- paste0(date(Dados_2008_2018)[i],"/",date(Dados_2008_2018)[i]+1460)
+sem_fim <- endpoints(Dados_2008_2018,"months",k=6)
+for(i in 1:length(sem_ini)){
+  if(!is.na(sem_fim[i+9])){
+    datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                         date(Dados_2008_2018)[sem_fim[i+8]])
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
@@ -45,18 +48,18 @@ for(i in sem_ini){
                                   2,colnames(dados_per_form))
     cl <- makeCluster(no_cores) 
     registerDoParallel(cl)
-    pares_adf <- foreach(i=1:nrow(pares),
+    pares_adf <- foreach(j=1:nrow(pares),
                            .errorhandling = "pass", 
                            .packages = "egcm") %dopar%{
-                             egcm(dados_per_form[,pares[i,2]],dados_per_form[,pares[i,1]],
+                             egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
                                   urtest = "adf",
                                   p.value = 0.05)
                            }
     
-    pares_jo <- foreach(i=1:nrow(pares),
+    pares_jo <- foreach(j=1:nrow(pares),
                            .errorhandling = "pass", 
                            .packages = "egcm") %dopar%{
-                             egcm(dados_per_form[,pares[i,2]],dados_per_form[,pares[i,1]],
+                             egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
                                   urtest = "jo-e",
                                   p.value = 0.05)
                            }
@@ -99,14 +102,14 @@ for(i in sem_ini){
   tr <- c(1,0.5) ## Threshold parta abertura e fechamento de posições
   
   print("Calculando Retornos")
-  for(j in 1:length(pares_coint_ci1s)){
+  for(k in 1:length(pares_coint_ci1s)){
     invest <- c(1,rep(0,nrow(dados_per_form)-1))
-    results <- returcalc(sinal = M_norm[[j]],
-                         par = pares_datas[[j]],
-                         betas =  betas[j],
+    results <- returcalc_for(sinal = M_norm[[k]],
+                         par = pares_datas[[k]],
+                         betas =  betas[k],
                          tr = tr,
                          invest = invest)
-    resultados_form[[j]] <- results
+    resultados_form[[k]] <- results
   }
   names(resultados_form) <- names(pares_coint_ci1s)
   
@@ -121,34 +124,56 @@ for(i in sem_ini){
   #portret$R2 <- sapply(pares_formation, function(x) x$pvmr)
   portret <- as_tibble(portret)
   
-  resultados1[[length(resultados1)+1]]<- portret
-  names(resultados1)[length(resultados1)] <- paste0("Perido de Formação ",
-                                                    datas_form)
-  
+  resultados1[[paste0("Perido de Formação ",datas_form)]][["Sumario"]] <- portret
+  resultados1[[paste0("Perido de Formação ",datas_form)]][["Trades"]] <- resultados_form
+
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
   ###### partir de cada ativo na ponta dependente  ######
   #######################################################
+  ###### Selecionando os 20 melhores pares ##############
   
-  #lapply(unique(str_sub(portret$Pares, end = -7)), function(x){
-   # portret %>%
-    #  filter(str_sub(Pares, end = -7) == x) %>%
-     # filter(Sharp == max(Sharp)) 
-  #}) %>% 
-   # bind_rows() %>%
-  #  arrange(desc(Sharp)) -> pares_trading  
+  if(pares_sele_crit == "top_sharp_balanced"){
+    lapply(unique(str_sub(portret$Pares, end = -7)), function(x){
+      portret %>%
+        filter(str_sub(Pares, end = -7) == x) %>%
+        filter(Sharp == max(Sharp)) 
+    }) %>% 
+      bind_rows() %>%
+      arrange(desc(Sharp)) -> pares_trading
+    pares_trading_20 <- pares_trading[1:20,]
+    pares_trading_20 <- na.omit(pares_trading_20)
+  } else if(pares_sele_crit == "top_return_balanced"){
+    lapply(unique(str_sub(portret$Pares, end = -7)), function(x){
+      portret %>%
+        filter(str_sub(Pares, end = -7) == x) %>%
+        filter(Retorno == max(Retorno)) 
+    }) %>% 
+      bind_rows() %>%
+      arrange(desc(Retorno)) -> pares_trading
+    pares_trading_20 <- pares_trading[1:20,]
+    pares_trading_20 <- na.omit(pares_trading_20)
+  }else if(pares_sele_crit == "top_sharp"){
+    pares_trading <- arrange(portret, desc(Sharp))
+    pares_trading_20 <- pares_trading[1:20,]
+    pares_trading_20 <- na.omit(pares_trading_20)
+  } else if(pares_sele_crit == "top_return") {
+    pares_trading <- arrange(portret, desc(Retorno))
+    pares_trading_20 <- pares_trading[1:20,]
+    pares_trading_20 <- na.omit(pares_trading_20)
+  } else if(pares_sele_crit == "random" & nrow(portret) > 20){
+    pares_trading_20 <- portret[sample(1:nrow(portret),20,replace = F),]
+    pares_trading_20 <- na.omit(pares_trading_20)
+  } else if(pares_sele_crit == "random" & nrow(portret) < 20){
+    pares_trading_20 <- portret
+    pares_trading_20 <- na.omit(pares_trading_20)
+  }
   
-  pares_trading <- arrange(portret, desc(Sharp))
-  
-  ###### Selecionando os 20 melhores pares ######
-  
-  pares_trading_20 <- pares_trading[1:20,]
-  pares_trading_20 <- na.omit(pares_trading_20)
   ###### Formatando dados para período de trading
   
-  datas_trading <- paste0(date(Dados_2008_2018)[i],"/",date(Dados_2008_2018)[i]+1642)
-  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[i]+1461,"/",
-               date(Dados_2008_2018)[i]+1642))
+  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",date(Dados_2008_2018)[sem_fim[i+9]])
+  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[sem_ini[i+8]],"/",
+               date(Dados_2008_2018)[sem_fim[i+9]]))
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
   ###### Estimando Periodo de trading
@@ -157,23 +182,23 @@ for(i in sem_ini){
   pares_coint_trading <- list(NULL)
   cl <- makeCluster(no_cores)
   registerDoParallel(cl)
-  pares_coint_trading <- foreach(k=nrow(dados_per_form):nrow(dados_per_trading),
+  pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
                                  .errorhandling = "pass",
                                  .packages = c("egcm","stringr")) %dopar%{
                                    lapply(pares_trading_20$Pares, function(x) {
-                                     egcm(dados_per_trading[1:k,str_trim(str_sub(x, start = -6))],
-                                          dados_per_trading[1:k,str_trim(str_sub(x,end = -7))])}
+                                     egcm(dados_per_trading[1:l,str_trim(str_sub(x, start = -6))],
+                                          dados_per_trading[1:l,str_trim(str_sub(x,end = -7))])}
                                    )
                                  }
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
 
-  M_norm_t <- foreach(k=1:nrow(pares_trading_20),
+  M_norm_t <- foreach(m=1:nrow(pares_trading_20),
                       .errorhandling = "pass",
                       .packages = c("egcm","stringr")) %dopar%{
                         lapply(pares_coint_trading[-1], function(x){
-                          tail((x[[k]]$residuals/x[[k]]$residuals.sd),1)  
+                          tail((x[[m]]$residuals/x[[m]]$residuals.sd),1)  
                         })
                         
                       }
@@ -183,27 +208,31 @@ for(i in sem_ini){
   
   ###### Preparação para os trades
   
-  pares_datas <- lapply(pares_coint_trading[[131]], 
-                        function(x) cbind(tail(x$S2,130),tail(x$S1,130)))
+  pares_datas <- lapply(pares_coint_trading[[length(pares_coint_trading)]], 
+                        function(x) cbind(tail(x$S2,length(pares_coint_trading)),
+                                          tail(x$S1,length(pares_coint_trading))))
   
   resultados_trading <- list(NULL)
   betas <- list(NULL)
-  for (k in 1:nrow(pares_trading_20)) {
-    b <- lapply(pares_coint_trading, function(x) x[[k]]$beta) ### Função para extrair
-    betas[[k]] <- tibble(Beta = mean(unlist(b)))              ### os betas médios       
+  for (n in 1:nrow(pares_trading_20)) {
+    b <- lapply(pares_coint_trading, function(x) x[[n]]$beta) ### Função para extrair
+    betas[[n]] <- tibble(Beta = mean(unlist(b)),DP = sd(unlist(b))) ### os betas médios 
+        
   }
   
   ###### Realizando os tradings
   print("Trading")
-  for(j in 1:nrow(pares_trading_20)){
+  for(k in 1:nrow(pares_trading_20)){
     invest <- c(1,rep(0,length(M_norm_t[[1]])-1))
-    results <- returcalc(sinal = M_norm_t[[j]],
-                         par = pares_datas[[j]],
-                         betas =  betas[[j]]$Beta,
+    results <- returcalc_trad(sinal = M_norm_t[[k]],
+                         par = pares_datas[[k]],
+                         betas =  betas[[k]]$Beta,
                          tr = tr,
-                         invest = invest)
-    resultados_trading[[j]] <- results
+                         invest = invest,
+                         lmt_perca = 0.1)
+    resultados_trading[[k]] <- results
   }
+  names(resultados_trading) <- pares_trading_20$Pares
   
   ###### Realizando Trades
   
@@ -213,19 +242,21 @@ for(i in sem_ini){
   portret_trading$Retorno <- sapply(resultados_trading, function(x) ((tail(x$invest,1)/1)-1)*100)
   portret_trading$Desvio <- sapply(resultados_trading, function(x) sd(x$invest))
   portret_trading$Sharp <- portret_trading$Retorno/portret_trading$Desvio
-  #portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
+  portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
   portret_trading <- as_tibble(portret_trading)
   
-  resultados2[[length(resultados2)+1]]<- portret_trading
-  names(resultados2)[[length(resultados2)]] <- paste0("Periodo de Trading ",date(Dados_2008_2018)[i]+1461,"/",
-                                                      date(Dados_2008_2018)[i]+1642) 
-  
+  aux <- paste0("Periodo de Trading ",
+         date(Dados_2008_2018)[sem_ini[i+8]],"/",
+         date(Dados_2008_2018)[sem_fim[i+9]]) 
+  resultados2[[aux]][["Sumario"]] <- portret_trading
+  resultados2[[aux]][["Trades"]] <- resultados_trading
+
 }
 
-resultados[[1]] <- resultados1
-resultados[[2]] <- resultados2
-names(resultados) <- c("Periodo de Formação","Periodo de Trading")
-saveRDS(resultados,"C:/Users/Mol/Desktop/Lemuel Pair/resultados_ci.rds")
+resultados[["Periodo de Formação"]] <- resultados1
+resultados[["Periodo de Trading"]] <- resultados2
+saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_ci_",
+                          pares_sele_crit,".rds"))
 
   
   

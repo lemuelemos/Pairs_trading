@@ -1,0 +1,318 @@
+---
+title: "Pairs Trading por cointegração parcial"
+output:
+  pdf_document:
+    keep_tex: yes
+  html_notebook: 
+    theme: journal
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(purrr)
+library(timetk)
+library(kableExtra)
+library(ggplot2)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+### Carregar resultados de cointegraÃ§Ã£o normal
+resul_ci_random_4A <-  as_tibble(readRDS('~/Pairs_trading/resultados/resultados_ci_random_4A.rds'))
+
+resul_ci_top_return_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_ci_top_return_4A.rds'))
+
+resul_ci_top_return_balanced_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_ci_top_return_balanced_4A.rds'))
+
+resul_ci_top_sharp_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_ci_top_sharp_4A.rds'))
+
+resul_ci_top_sharp_balanced_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_ci_top_sharp_balanced_4A.rds'))
+
+### Carregar resultados de cointegraÃ§Ã£o parcial
+resul_pci_random_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_pci_random_4A.rds'))
+
+resul_pci_top_return_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_pci_top_return_4A.rds'))
+
+resul_pci_top_return_balanced_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_pci_top_return_balanced_4A.rds'))
+
+resul_pci_top_sharp_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_pci_top_sharp_4A.rds'))
+
+resul_pci_top_sharp_balanced_4A <- as_tibble(readRDS('~/Pairs_trading/resultados/resultados_pci_top_sharp_balanced_4A.rds'))
+
+### Carregar os dados
+Dados_2000_2019 <- readxl::read_excel("Dados_2000_2019.xlsx")
+Dados_2000_2019$Dates <- as.Date(Dados_2000_2019$Dates)
+Dados_2000_2019 %>%
+  map_if(is.character,as.numeric) %>%
+  tk_tbl(timetk_idx = T) %>%
+  tk_xts-> Dados_2000_2019
+
+Dados_2008_2018 <- Dados_2000_2019["2008/2018"]
+rm(Dados_2000_2019)
+Dados_2008_2018[,apply(Dados_2008_2018,2,
+                      function(x) any(is.na(x)) == F), 
+                drop = F] -> Dados_2008_2018
+```
+
+
+## Discussão e estatísticas descritivas
+
+Para realizar as estimações utilizamos 5 alternativas de estimação com a finalidade de detectar a robustez da metodologia, tanto para cointegração convencional como para coinetegração parcial. Para a coitegração convencional, foram rodados todos os pares possíveis a partir de 48 ativos, do ano de 2008 até o anos de 2018. Os dados dos preços estão na frequência diária, com seus preços ajustados para dividentos e desdobramentos. Os testes para detecção de cointegração utlizado foram o ADF e o de Johansen's utilizando os autovalores. Portanto, os pares que serão utilizados para a realização dos trades tem de estar cointegrados pelos dois critérios em simultâneo. A estimação consiste em dois períodos, o de formação e o de trade. O período de formação correponde a quatro anos, em que serão feitos os teste de cointegração dentro da amostra. O período de trade consistirá nos seis meses após o de formação, em que a cada dia o modelo é re-estimado e dessa forma um resídos são obtidos a cada novo dia adicionado, em que a série de resíduos nesta etapa corresponderá pela junção do resíduo gerado a cada novo dia. 
+
+Para criar o sinal da operação, os resíduos foram padronizados, e dessa forma, o intervalo de abertura utilizado foi de 1 e -0.5, para os resíduos positivos e -1 e 0.5 para os resíduos negativos. 
+
+Para a cointegração parcial, temos que os critérios do período de formação e trading serão os mesmos. Porém, os parâmetros de $\rho$ e $R^{2}$ terão de ser maiores que 0.5.
+
+Para fins de análise, alguns outros parâmetros foram utilizados para verificação de robustez. O primeiro fator estar em análisar se os pares ao formarem posições mais vendidas estes obtém resultados melhores. Se partirmos da suposição da assimetria na volatilidade para valores negativos, a busca por pares que possuam posições mais vendidas pode ser mais vantajoso em termos de rentabilidade. Um segunod ponto é a volatilidade do beta, que conisste em verificar que na situação em que a cada novo dia se reestima o modelo, teremos valores de betas diferentes, e dessa forma, uma maior variabilidade dos betas condiz com uma relação mais frágil de cointegração. Por último, testar quais os níveis de coinetgração por período, no caso da cointegração parcial, em que testaremos os níveis de cointegração medidos pelo $R^{2}$ por período.
+
+As cinco alternativas utilizadas consistem em escolher vinte pares, a partir de certos critérios. A primeira metodologia escolhe vinte pares a partir dos vinte melhores indices de sharp no período de formação, para se utilizados no período de trade. A segunda consiste nos vinte melhores retornos. Por fim, para se evitar que algum ativo se repita várias vezes entre os vinte pares, serão escolhidos os vinte melhores sharp's, a partir dos pares com o melhor sharp para cada ativo da amostra, repetindo o procedimento para os vinte melhores retornos. O último critério consiste em selecionar aleatóriamente 20 pares, com o objetivo de testar se os resultados não estão atribuídos a partir da "sorte".
+
+## Resultados
+### Cointegração Convencional
+
+
+```{r, echo=FALSE}
+lapply(resul_ci_random_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable(caption = "Retorno dos Pares Aleatórios", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"), 
+                full_width = F,
+                latex_options = "hold_position") 
+######################################################################
+lapply(resul_ci_top_return_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno dos Pares Melhor Retorno", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position") 
+######################################################################
+lapply(resul_ci_top_sharp_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno dos Pares Melhor Sharp", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+lapply(resul_ci_top_return_balanced_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno dos Pares Melhor Retorno Balanceado", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+lapply(resul_ci_top_sharp_balanced_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno dos Pares Melhor Sharp Balanceado", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+sum_resul_ci <- NULL
+sum_resul_ci[["Pares_Aleatorios"]] <- resul_ci_random_4A
+sum_resul_ci[["Top_Sharp"]] <- resul_ci_top_sharp_4A
+sum_resul_ci[["Top_Retorno"]] <- resul_ci_top_sharp_4A
+sum_resul_ci[["Top_Sharp_Balanceado"]] <- resul_ci_top_sharp_balanced_4A
+sum_resul_ci[["Top_Retorno_Balanceado"]] <- resul_ci_top_return_balanced_4A
+
+lapply(sum_resul_ci, function(x) 
+  lapply(x$`Periodo de Trading`, function(y) mean(y$Sumario$Retorno))) %>% 
+  lapply(.,function(x) lapply(x,function(y) (y/100+1))) %>% 
+  lapply(.,function(x) (tail(cumprod(x),1)-1)*100) %>% 
+  unlist() %>% 
+  tibble(Períodos = str_split(names(unlist(.)),"\\.",simplify=T)[,1], 
+         Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno Acumulado Cointegração Convencional", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+```
+
+Para a metodologia utilizada os resultados para cointegração foram bem insatisfatórios, chegando a retornos de até $-36\%$, não oferecendo vantagem nem contra a escolha aleatória dos pares. O fato é que o tempo utilizado no período de formação gera parâmetros muito discrepantes, temos períodos de meia vida elevados de até 150 dias, em que é quase que o período de trade completo. 
+
+Outro ponto que vale a penas destacar é que os critérios utilizados para atestar a cointegração froam bastantes restritivos, gerando situações em que apenas 15 pares estavam cointegrados. Esse fato prejudicou considerávelmente os resultados obitidos com a técnica
+
+### Cointegração Parcial
+
+
+```{r, echo=FALSE, message=F}
+lapply(resul_pci_random_4A$`Periodo de Trading`, function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",caption = "Retorno dos Pares Aleatórios", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"), 
+                full_width = F,
+                latex_options = "hold_position") 
+######################################################################
+lapply(resul_pci_top_return_4A$`Periodo de Trading`, function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",caption = "Retorno dos Pares Melhor Retorno", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position") 
+######################################################################
+lapply(resul_pci_top_sharp_4A$`Periodo de Trading`, function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",caption = "Retorno dos Pares Melhor Sharp", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+lapply(resul_pci_top_return_balanced_4A$`Periodo de Trading`, function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",caption = "Retorno dos Pares Melhor Retorno Balanceado", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+lapply(resul_pci_top_sharp_balanced_4A$`Periodo de Trading`, 
+       function(x) mean(x$Sumario$Retorno)) %>%
+    unlist() %>% 
+    tibble(Períodos = names(unlist(.)), Retorno = .) %>% 
+  kable("latex",
+        caption = "Retorno dos Pares Melhor Sharp Balanceado", 
+        booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+######################################################################
+sum_resul_pci <- NULL
+sum_resul_pci[["Pares_Aleatorios"]] <- resul_pci_random_4A
+sum_resul_pci[["Top_Sharp"]] <- resul_pci_top_sharp_4A
+sum_resul_pci[["Top_Retorno"]] <- resul_pci_top_sharp_4A
+sum_resul_pci[["Top_Sharp_Balanceado"]] <- resul_pci_top_sharp_balanced_4A
+sum_resul_pci[["Top_Retorno_Balanceado"]] <- resul_pci_top_return_balanced_4A
+
+lapply(sum_resul_pci, function(x) 
+  lapply(x$`Periodo de Trading`, function(y) mean(y$Sumario$Retorno))) %>% 
+  lapply(.,function(x) lapply(x,function(y) (y/100+1))) %>% 
+  lapply(.,function(x) (tail(cumprod(x),1)-1)*100) %>% 
+  unlist() %>% 
+  tibble(Períodos = str_split(names(unlist(.)),"\\.",simplify=T)[,1], Retorno = .) %>% 
+  kable("latex",caption = "Retorno dos Pares Melhor Sharp Balanceado", booktabs = T) %>%
+  kable_styling(bootstrap_options = c("striped", 
+                                      "hover", 
+                                      "condensed", 
+                                      "responsive"),  
+                full_width = F,
+                latex_options = "hold_position")
+```
+
+Para a cointegração parcial, os resultaos foram bastantes satisfatórios, com retorno de $152\%$ em 6 anos. Todos os métodos foram eficientes, com os pares com maior retorno balancenado possuindo o maior retorno. A tecnica se demostrou robusta inclusive para a seleção de pares aleatórios, em que mesmo ela sendo menos rentável, a cointegração parcial se demonstrou bastante atrativa.
+
+
+### Demais Parâmetros
+
+Ao analisar a questão do R2, é possível observar que o maior aproveitamento da estratégia de cointegração parcial ocorre entre os R2 de 0.7 e 0.8, alinhado com os achados do artigo de base.  
+```{r, echo=F}
+######################################################################
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < (qnt[1] - H)] <- NA
+  y[x > (qnt[2] + H)] <- NA
+  y
+}
+######################################################################
+lapply(resul_pci_random_4A$`Periodo de Formação`, 
+               function(x) tibble(Retornos=x$Sumario$Retorno,R2=x$Sumario$R2)) %>% 
+  bind_rows(.id = "Periodo") %>% 
+  mutate_at(vars(Retornos),remove_outliers) %>%
+  mutate_at(vars(Periodo),as_factor) %>% 
+  na.omit() %>%
+  ggplot(aes(R2,Retornos))+
+  geom_point()+
+  geom_smooth(se=F) 
+######################################################################
+lapply(resul_pci_random_4A$`Periodo de Formação`, 
+               function(x) tibble(Retornos=x$Sumario$Retorno,R2=x$Sumario$R2)) %>% 
+  bind_rows(.id = "Periodo") %>%
+  na.omit() %>% 
+  mutate_at(vars(Retornos),remove_outliers) %>%
+  mutate_at(vars(Periodo),as_factor) %>%
+  group_by(Periodo) %>% 
+  summarise(R2=mean(R2)) %>% 
+  ggplot(aes(Periodo,R2))+
+  geom_col()+
+  coord_flip()
+######################################################################
+lapply(resul_pci_random_4A$`Periodo de Formação`, 
+               function(x) tibble(Retornos=x$Sumario$Retorno,R2=x$Sumario$R2)) %>% 
+  bind_rows(.id = "Periodo") %>%
+  na.omit() %>% 
+  mutate_at(vars(Retornos),remove_outliers) %>%
+  mutate_at(vars(Periodo),as_factor) %>%
+  group_by(Periodo) %>% 
+  summarise(R2_Medio=mean(R2),
+            R2_Desvio=sd(R2)) %>%
+  mutate(R2_CV = R2_Medio/R2_Desvio) %>% 
+  ggplot(aes(Periodo,R2_CV))+
+  geom_col()+
+  coord_flip()
+```
+
+
+Ao tratar dois níveis de R2 por período, não há muita diferença entre os niveis de cointegração, porém, a variabilidade difere. Do primeiro semestre de 2012 ao primeiro semestre de 2014 temos niveis mais elevados de dispersão, o que indica que o nível geral de cointegração diminuiu. 
+
+
+
+
