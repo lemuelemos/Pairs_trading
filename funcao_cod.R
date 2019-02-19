@@ -31,7 +31,8 @@ rm(Nomes)
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
-pairs.estimation <- function(dados=NULL,formationp=NULL,tradep=NULL,tr=NULL,pares_sele_crit=NULL){
+pairs.estimation <- function(dados=NULL,formationp=NULL,
+                             tradep=NULL,tr=NULL,pares_sele_crit=NULL){
   criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
   
   tr <- ifelse(is.null(tr),c(1,0.5),tr)
@@ -82,12 +83,14 @@ for(i in 1:length(sem_ini)){
   pares_nomes <- sapply(paresR,
                         function(x) paste0(x$target_name," ",x$factor_names)) 
   ###### Teste de Cointegração Parcial
-  
   print("Teste de Cointegração Parcial")
   cl <- makeCluster(no_cores)
-  clusterExport(cl, "paresR")
-  clusterEvalQ(cl, library(partialCI))
-  pci_teste <- parLapply(cl,paresR, function(x) test.pci(x))
+  registerDoParallel(cl)
+  pci_teste <- foreach(i=1:length(paresR),
+                       .errorhandling = "pass",
+                       .packages = "partialCI") %dopar%{
+                         test.pci(paresR[[i]])
+          }
   stopCluster(cl)
   pci_teste <- pci_teste[!sapply(pci_teste,function(x) x$p.value[1] > 0.05)]
   pci_teste <- pci_teste[!sapply(pci_teste,function(x) x$p.value[2] > 0.05)]

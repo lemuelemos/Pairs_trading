@@ -33,13 +33,15 @@ rm(Nomes)
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
-#pares_sele_crit <- "top_sharp"
+formationp <- 12
+tradep <- 4
+pares_sele_crit <- "top_sharp"
 sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
 sem_fim <- endpoints(Dados_2008_2018,"months",k=6)
 for(i in 1:length(sem_ini)){
-  if(!is.na(sem_fim[i+9])){
+  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
-                         date(Dados_2008_2018)[sem_fim[i+8]])
+                         date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
@@ -171,9 +173,10 @@ for(i in 1:length(sem_ini)){
   
   ###### Formatando dados para período de trading
   
-  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",date(Dados_2008_2018)[sem_fim[i+9]])
-  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[sem_ini[i+8]],"/",
-               date(Dados_2008_2018)[sem_fim[i+9]]))
+  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
+  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
   ###### Estimando Periodo de trading
@@ -256,7 +259,7 @@ for(i in 1:length(sem_ini)){
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
 saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_ci_",
-                          pares_sele_crit,".rds"))
+                          pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 
   
   
