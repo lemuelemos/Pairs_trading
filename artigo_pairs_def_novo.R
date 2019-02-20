@@ -177,10 +177,10 @@ for(i in 1:length(sem_ini)){
   
   datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
                           date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
-  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
-               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
+  print(paste0("Periodo de Trading ",date(dados_per_form)[nrow(dados_per_form)]+1,"/",
+               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   ###### Estimando Periodo de trading
   
   print("Estimando")
