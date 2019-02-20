@@ -27,15 +27,15 @@ Nomes <- colnames(Dados_2008_2018) ## Taking the names of equity's
 Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
 colnames(Dados_2008_2018) <- Nomes
 rm(Nomes)
+#formationp <- 24
+#tradep <- 3
+#pares_sele_crit <- "top_return_balanced"
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
-formationp <- 24
-tradep <- 3
-pares_sele_crit <- "top_return_balanced"
 sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
 sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 for(i in 1:length(sem_ini)){
