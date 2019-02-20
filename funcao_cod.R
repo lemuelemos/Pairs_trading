@@ -32,10 +32,13 @@ rm(Nomes)
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
 pairs.estimation <- function(dados=NULL,formationp=NULL,
-                             tradep=NULL,tr=NULL,pares_sele_crit=NULL){
+                             tradep=NULL,tr=NULL,
+                             pares_sele_crit=NULL,stop=0.8){
   criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
   
-  tr <- ifelse(is.null(tr),c(1,0.5),tr)
+  if(is.null(tr)){
+    tr <- c(1,0.5)
+  }
   if(is.null(dados)){
     stop('Faltando Dados')
   } else if(is.null(formationp)){
@@ -76,7 +79,8 @@ for(i in 1:length(sem_ini)){
   
   ###### Retirando Pares co rho e R2 maior que 0.5
   
-  pares_coint <- pares_coint[!sapply(pares_coint, function(x) is.na(x$rho.se))] ### Retirando Pares com valores vazios
+  pares_coint <- pares_coint[!sapply(pares_coint,is.null)]
+  pares_coint <- pares_coint[which(sapply(pares_coint, function(x) is.na(x$rho.se))==F)] ### Retirando Pares com valores vazios
   print("Retirando apenas os pares com rho e R² acima de 0.5")
   paresR <- pares_coint[sapply(pares_coint,function(x) x$pvmr > 0.5)]
   paresR <- paresR[sapply(paresR,function(x) x$rho > 0.5)]
@@ -84,13 +88,13 @@ for(i in 1:length(sem_ini)){
                         function(x) paste0(x$target_name," ",x$factor_names)) 
   ###### Teste de Cointegração Parcial
   print("Teste de Cointegração Parcial")
-  cl <- makeCluster(no_cores)
+  cl <- makeCluster(no_cores) 
   registerDoParallel(cl)
   pci_teste <- foreach(i=1:length(paresR),
                        .errorhandling = "pass",
                        .packages = "partialCI") %dopar%{
                          test.pci(paresR[[i]])
-          }
+                       }
   stopCluster(cl)
   pci_teste <- pci_teste[!sapply(pci_teste,function(x) x$p.value[1] > 0.05)]
   pci_teste <- pci_teste[!sapply(pci_teste,function(x) x$p.value[2] > 0.05)]
@@ -142,6 +146,7 @@ for(i in 1:length(sem_ini)){
   
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Sumario"]] <- portret
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Trades"]] <- resultados_form
+  resultados1[[paste0("Perido de Formação ",datas_form)]][["ParesF"]] <- pares_coint
   
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
@@ -187,9 +192,10 @@ for(i in 1:length(sem_ini)){
   
   ###### Formatando dados para período de trading
   
-  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",date(Dados_2008_2018)[sem_fim[i+9]])
-  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[sem_ini[i+8]],"/",
-               date(Dados_2008_2018)[sem_fim[i+9]]))
+  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
+  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
   ###### Estimando Periodo de trading
@@ -215,17 +221,16 @@ for(i in 1:length(sem_ini)){
   cl <- makeCluster(no_cores)
   registerDoParallel(cl)
   M_norm_t <- foreach(k=1:nrow(pares_trading_20),
-                      .errorhandling = "pass",
+                      .errorhandling = "stop",
                       .packages = c("partialCI","stringr")) %dopar%{
-                        lapply(pares_coint_trading[-1], function(x){
-                          tail((statehistory.pci(x[[k]])$M/sd(statehistory.pci(x[[k]])$M))
-                               ,1)  
+                        lapply(pares_coint_trading, function(x){
+                          tail((statehistory.pci(x[[k]])$M),1)  
                         })
-                        
                       }
   
   stopCluster(cl)
   M_norm_t <- lapply(M_norm_t, function(x) unlist(x))
+  M_norm_t <- lapply(M_norm_t, function(x) x/sd(x))
   
   ###### Preparação para os trades
   
@@ -252,7 +257,7 @@ for(i in 1:length(sem_ini)){
                               betas =  betas[[j]]$Beta,
                               tr = tr,
                               invest = invest,
-                              lmt_perca = 0.1)
+                              lmt_perca = stop)
     resultados_trading[[j]] <- results
   }
   
@@ -269,8 +274,8 @@ for(i in 1:length(sem_ini)){
   portret_trading <- as_tibble(portret_trading)
   
   aux <- paste0("Periodo de Trading ",
-                date(Dados_2008_2018)[sem_ini[i+8]],"/",
-                date(Dados_2008_2018)[sem_fim[i+9]]) 
+                date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+                date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
   
