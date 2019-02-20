@@ -33,11 +33,11 @@ rm(Nomes)
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
-formationp <- 12
-tradep <- 4
-pares_sele_crit <- "top_sharp"
-sem_ini <- endpoints(Dados_2008_2018,"months",k=6)+1 ### Demarca os inicios de cada semestre
-sem_fim <- endpoints(Dados_2008_2018,"months",k=6)
+formationp <- 24
+tradep <- 3
+pares_sele_crit <- "top_return_balanced"
+sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
+sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 for(i in 1:length(sem_ini)){
   if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
@@ -54,7 +54,7 @@ for(i in 1:length(sem_ini)){
                            .errorhandling = "pass", 
                            .packages = "egcm") %dopar%{
                              egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
-                                  urtest = "adf",
+                                  urtest = "pp",
                                   p.value = 0.05)
                            }
     
@@ -62,7 +62,7 @@ for(i in 1:length(sem_ini)){
                            .errorhandling = "pass", 
                            .packages = "egcm") %dopar%{
                              egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
-                                  urtest = "jo-e",
+                                  urtest = "pgff",
                                   p.value = 0.05)
                            }
     stopCluster(cl)
@@ -128,7 +128,7 @@ for(i in 1:length(sem_ini)){
   
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Sumario"]] <- portret
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Trades"]] <- resultados_form
-
+  resultados1[[paste0("Perido de Formação ",datas_form)]][["ParesF"]] <- pares_coint_ci1s
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
   ###### partir de cada ativo na ponta dependente  ######
@@ -200,15 +200,14 @@ for(i in 1:length(sem_ini)){
   M_norm_t <- foreach(m=1:nrow(pares_trading_20),
                       .errorhandling = "pass",
                       .packages = c("egcm","stringr")) %dopar%{
-                        lapply(pares_coint_trading[-1], function(x){
-                          tail((x[[m]]$residuals/x[[m]]$residuals.sd),1)  
+                        lapply(pares_coint_trading, function(x){
+                          tail(x[[m]]$residuals,1)  
                         })
-                        
                       }
   
   stopCluster(cl)
   M_norm_t <- lapply(M_norm_t, function(x) unlist(x))
-  
+  M_norm_t <- lapply(M_norm_t, function(x) x/sd(x))
   ###### Preparação para os trades
   
   pares_datas <- lapply(pares_coint_trading[[length(pares_coint_trading)]], 
@@ -232,7 +231,7 @@ for(i in 1:length(sem_ini)){
                          betas =  betas[[k]]$Beta,
                          tr = tr,
                          invest = invest,
-                         lmt_perca = 0.1)
+                         lmt_perca = 0.8)
     resultados_trading[[k]] <- results
   }
   names(resultados_trading) <- pares_trading_20$Pares
@@ -249,10 +248,11 @@ for(i in 1:length(sem_ini)){
   portret_trading <- as_tibble(portret_trading)
   
   aux <- paste0("Periodo de Trading ",
-         date(Dados_2008_2018)[sem_ini[i+8]],"/",
-         date(Dados_2008_2018)[sem_fim[i+9]]) 
+                date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+                date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
+  resultados2[[aux]][["ParesT"]] <- pares_coint_trading
 
 }
 
