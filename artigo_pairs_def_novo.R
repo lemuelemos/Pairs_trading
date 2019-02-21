@@ -265,7 +265,7 @@ for(i in 1:length(sem_ini)){
 
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
-saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_pci_",
+saveRDS(resultados,paste0(getwd(),"/resultados/resultados_pci_",
                           pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 
 
