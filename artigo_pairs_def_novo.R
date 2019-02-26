@@ -39,7 +39,7 @@ resultados <- NULL
 sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
 sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 for(i in 1:length(sem_ini)){
-  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
+  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
     dados_per_form <- Dados_2008_2018[datas_form]
