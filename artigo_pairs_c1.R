@@ -28,9 +28,10 @@ Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
 colnames(Dados_2008_2018) <- Nomes
 rm(Nomes)
 
-#formationp <- 48
-#tradep <- 6
-#pares_sele_crit <- "random"
+formationp <- 12
+tradep <- 4
+pares_sele_crit <- "random"
+window_est <- "fixed"
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
@@ -184,23 +185,36 @@ for(i in 1:length(sem_ini)){
 
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
-  print(paste0("Periodo de Trading ",(date(dados_per_form)[nrow(dados_per_form)]+1),"/",
-               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   ###### Estimando Periodo de trading
-  
-  print("Estimando")
-  pares_coint_trading <- list(NULL)
-  cl <- makeCluster(no_cores)
-  registerDoParallel(cl)
-  pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
-                                 .errorhandling = "pass",
-                                 .packages = c("egcm","stringr")) %dopar%{
-                                   lapply(pares_trading_20$Pares, function(x) {
-                                     egcm(dados_per_trading[1:l,str_trim(str_sub(x, start = -6))],
-                                          dados_per_trading[1:l,str_trim(str_sub(x,end = -7))])}
-                                   )
-                                 }
-  
+  if(window_est == "fixed"){
+    print("Estimando")
+    pares_coint_trading <- list(NULL)
+    cl <- makeCluster(no_cores)
+    registerDoParallel(cl)
+    pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
+                                   .errorhandling = "pass",
+                                   .packages = c("egcm","stringr")) %dopar%{
+                                     lapply(pares_trading_20$Pares, function(x) {
+                                       egcm(dados_per_trading[1:l,str_trim(str_sub(x, start = -6))],
+                                            dados_per_trading[1:l,str_trim(str_sub(x,end = -7))])}
+                                     )
+                                   }
+  } else if(window_est == "mov") {
+    pares_coint_trading <- list(NULL)
+    cl <- makeCluster(no_cores)
+    registerDoParallel(cl)
+    pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
+                                   j=1:(nrow(dados_per_trading)-nrow(dados_per_form)+1),
+                                   .errorhandling = "pass",
+                                   .packages = c("egcm","stringr")) %dopar%{
+                                     lapply(pares_trading_20$Pares, function(x) {
+                                       egcm(dados_per_trading[j:l,str_trim(str_sub(x, start = -6))],
+                                            dados_per_trading[j:l,str_trim(str_sub(x,end = -7))])}
+                                     )
+                                   }
+  } else {
+    break("Faltando método de estimação")
+  }
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
 

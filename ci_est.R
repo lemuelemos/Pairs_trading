@@ -1,38 +1,12 @@
-library(readxl)
-library(purrr)
-library(dplyr)
-library(doParallel)
-library(xts)
-library(stringr)
-library(egcm)
-library(timetk)
-library(lubridate)
 
-##### Organizando os Dados
-Rcpp::sourceCpp("cpp_return.cpp") ### Código Auxiliar em C++ para estimar os retornos
-Dados_2000_2019 <- read_excel("Dados_2000_2019.xlsx")
-Dados_2000_2019$Dates <- as.Date(Dados_2000_2019$Dates)
-Dados_2000_2019 %>%
-  map_if(is.character,as.numeric) %>%
-  tk_tbl(timetk_idx = T) %>%
-  tk_xts-> Dados_2000_2019
+pairs.estimation_ci <- function(dados=NULL,
+                                formationp=NULL,
+                                tradep=NULL,
+                                tr=NULL,
+                                pares_sele_crit=NULL,
+                                stop=0.8,
+                                window_est="Fixed"){
 
-Dados_2008_2018 <- Dados_2000_2019["2008/2018"]
-rm(Dados_2000_2019)
-Dados_2008_2018[,apply(Dados_2008_2018,2,
-                       function(x) any(is.na(x)) == F), 
-                drop = F] -> Dados_2008_2018
-
-Nomes <- colnames(Dados_2008_2018) ## Taking the names of equity's
-Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
-colnames(Dados_2008_2018) <- Nomes
-rm(Nomes)
-
-pairs.estimation_ci <- function(dados=NULL,formationp=NULL,
-                             tradep=NULL,tr=NULL,
-                             pares_sele_crit=NULL,stop=0.8){
-
-  
 ### Pacotes  
   
 require(readxl)
@@ -214,17 +188,35 @@ for(i in 1:length(sem_ini)){
   ###### Estimando Periodo de trading
   
   print("Estimando")
-  pares_coint_trading <- list(NULL)
-  cl <- makeCluster(no_cores)
-  registerDoParallel(cl)
-  pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
-                                 .errorhandling = "pass",
-                                 .packages = c("egcm","stringr")) %dopar%{
-                                   lapply(pares_trading_20$Pares, function(x) {
-                                     egcm(dados_per_trading[1:l,str_trim(str_sub(x, start = -6))],
-                                          dados_per_trading[1:l,str_trim(str_sub(x,end = -7))])}
-                                   )
-                                 }
+  if(window_est == "fixed"){
+    print("Estimando")
+    pares_coint_trading <- list(NULL)
+    cl <- makeCluster(no_cores)
+    registerDoParallel(cl)
+    pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
+                                   .errorhandling = "pass",
+                                   .packages = c("egcm","stringr")) %dopar%{
+                                     lapply(pares_trading_20$Pares, function(x) {
+                                       egcm(dados_per_trading[1:l,str_trim(str_sub(x, start = -6))],
+                                            dados_per_trading[1:l,str_trim(str_sub(x,end = -7))])}
+                                     )
+                                   }
+  } else if(window_est == "mov") {
+    pares_coint_trading <- list(NULL)
+    cl <- makeCluster(no_cores)
+    registerDoParallel(cl)
+    pares_coint_trading <- foreach(l=nrow(dados_per_form):nrow(dados_per_trading),
+                                   j=1:(nrow(dados_per_trading)-nrow(dados_per_form)+1),
+                                   .errorhandling = "pass",
+                                   .packages = c("egcm","stringr")) %dopar%{
+                                     lapply(pares_trading_20$Pares, function(x) {
+                                       egcm(dados_per_trading[j:l,str_trim(str_sub(x, start = -6))],
+                                            dados_per_trading[j:l,str_trim(str_sub(x,end = -7))])}
+                                     )
+                                   }
+  } else {
+    break("Faltando método de estimação")
+  }
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
