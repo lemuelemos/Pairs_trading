@@ -216,7 +216,7 @@ for(i in 1:length(sem_ini)){
                                      )
                                    }
   } else {
-    break("Faltando método de estimação")
+    stop("Faltando método de estimação")
   }
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
