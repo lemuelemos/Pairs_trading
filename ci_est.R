@@ -18,7 +18,8 @@ require(stringr)
 require(egcm)  
 require(timetk)
 require(lubridate)
-  
+require(gtools)
+    
 ### Mensagens de erro
   criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
   
