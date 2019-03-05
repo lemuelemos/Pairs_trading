@@ -28,14 +28,16 @@ Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
 colnames(Dados_2008_2018) <- Nomes
 rm(Nomes)
 
+#formationp <- 48
+#tradep <- 6
+#pares_sele_crit <- "random"
+
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
-#formationp <- 24
-#tradep <- 3
-#pares_sele_crit <- "top_return_balanced"
+
 sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
 sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 for(i in 1:length(sem_ini)){
@@ -175,11 +177,15 @@ for(i in 1:length(sem_ini)){
   
   datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
                           date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
+
   print(paste0("Periodo de Trading ",
                date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
                date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
+
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
+  print(paste0("Periodo de Trading ",(date(dados_per_form)[nrow(dados_per_form)]+1),"/",
+               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   ###### Estimando Periodo de trading
   
   print("Estimando")
@@ -259,7 +265,7 @@ for(i in 1:length(sem_ini)){
 
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
-saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_ci_",
+saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci_",
                           pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 
   
