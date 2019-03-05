@@ -28,14 +28,45 @@ Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
 colnames(Dados_2008_2018) <- Nomes
 rm(Nomes)
 
+pairs.estimation_ci <- function(dados=NULL,formationp=NULL,
+                             tradep=NULL,tr=NULL,
+                             pares_sele_crit=NULL,stop=0.8){
+
+  
+### Pacotes  
+  
+require(readxl)
+require(purrr)
+require(dplyr)
+require(doParallel)
+require(xts)
+require(stringr)
+require(egcm)  
+require(timetk)
+require(lubridate)
+  
+### Mensagens de erro
+  criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
+  
+  if(is.null(tr)){
+    tr <- c(1,0.5)
+  }
+  if(is.null(dados)){
+    stop('Faltando Dados')
+  } else if(is.null(formationp)){
+    stop('Faltando Janela de Formação')
+  } else if(is.null(tradep)){
+    stop('Faltando Janela de Trade')
+  } else if(is.null(pares_sele_crit) || !pares_sele_crit %in% criterios){
+    stop('Faltando Critério de Escolha de Par ou Critério Inválido')
+  }   
+  
+  
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
 resultados1 <- NULL
 resultados2 <- NULL
 resultados <- NULL
-#formationp <- 24
-#tradep <- 3
-#pares_sele_crit <- "top_return_balanced"
 sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
 sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 for(i in 1:length(sem_ini)){
@@ -51,20 +82,20 @@ for(i in 1:length(sem_ini)){
     cl <- makeCluster(no_cores) 
     registerDoParallel(cl)
     pares_adf <- foreach(j=1:nrow(pares),
-                           .errorhandling = "pass", 
-                           .packages = "egcm") %dopar%{
-                             egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
-                                  urtest = "pp",
-                                  p.value = 0.05)
-                           }
+                         .errorhandling = "pass", 
+                         .packages = "egcm") %dopar%{
+                           egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
+                                urtest = "pp",
+                                p.value = 0.05)
+                         }
     
     pares_jo <- foreach(j=1:nrow(pares),
-                           .errorhandling = "pass", 
-                           .packages = "egcm") %dopar%{
-                             egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
-                                  urtest = "pgff",
-                                  p.value = 0.05)
-                           }
+                        .errorhandling = "pass", 
+                        .packages = "egcm") %dopar%{
+                          egcm(dados_per_form[,pares[j,2]],dados_per_form[,pares[j,1]],
+                               urtest = "pgff",
+                               p.value = 0.05)
+                        }
     stopCluster(cl)
   } else{break}
   
@@ -107,10 +138,10 @@ for(i in 1:length(sem_ini)){
   for(k in 1:length(pares_coint_ci1s)){
     invest <- c(1,rep(0,nrow(dados_per_form)-1))
     results <- returcalc_for(sinal = M_norm[[k]],
-                         par = pares_datas[[k]],
-                         betas =  betas[k],
-                         tr = tr,
-                         invest = invest)
+                             par = pares_datas[[k]],
+                             betas =  betas[k],
+                             tr = tr,
+                             invest = invest)
     resultados_form[[k]] <- results
   }
   names(resultados_form) <- names(pares_coint_ci1s)
@@ -197,7 +228,7 @@ for(i in 1:length(sem_ini)){
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
-
+  
   M_norm_t <- foreach(m=1:nrow(pares_trading_20),
                       .errorhandling = "pass",
                       .packages = c("egcm","stringr")) %dopar%{
@@ -220,7 +251,7 @@ for(i in 1:length(sem_ini)){
   for (n in 1:nrow(pares_trading_20)) {
     b <- lapply(pares_coint_trading, function(x) x[[n]]$beta) ### Função para extrair
     betas[[n]] <- tibble(Beta = mean(unlist(b)),DP = sd(unlist(b))) ### os betas médios 
-        
+    
   }
   
   ###### Realizando os tradings
@@ -228,11 +259,11 @@ for(i in 1:length(sem_ini)){
   for(k in 1:nrow(pares_trading_20)){
     invest <- c(1,rep(0,length(M_norm_t[[1]])-1))
     results <- returcalc_trad(sinal = M_norm_t[[k]],
-                         par = pares_datas[[k]],
-                         betas =  betas[[k]]$Beta,
-                         tr = tr,
-                         invest = invest,
-                         lmt_perca = 0.8)
+                              par = pares_datas[[k]],
+                              betas =  betas[[k]]$Beta,
+                              tr = tr,
+                              invest = invest,
+                              lmt_perca = 0.8)
     resultados_trading[[k]] <- results
   }
   names(resultados_trading) <- pares_trading_20$Pares
@@ -254,7 +285,7 @@ for(i in 1:length(sem_ini)){
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
   resultados2[[aux]][["ParesT"]] <- pares_coint_trading
-
+  
 }
 
 resultados[["Periodo de Formação"]] <- resultados1
@@ -262,6 +293,6 @@ resultados[["Periodo de Trading"]] <- resultados2
 saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_ci_",
                           pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 
-  
-  
-  
+return(resultados)
+}
+
