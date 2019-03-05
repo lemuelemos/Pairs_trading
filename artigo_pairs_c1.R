@@ -255,7 +255,7 @@ for(i in 1:length(sem_ini)){
   portret_trading <- as_tibble(portret_trading)
   
   aux <- paste0("Periodo de Trading ",
-                date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+                date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
                 date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
