@@ -93,9 +93,9 @@ for(i in 1:length(sem_ini)){
   ############################################
   ##### Comparing the cointegrationg on the 2 diferent's test's
   nomes_adf <- names(pares_coint_adf)
-  nomes_adf <- data_frame(nomes_adf)
+  nomes_adf <- tibble(nomes_adf)
   nomes_jo <- names(pares_coint_jo)
-  nomes_jo <- data_frame(nomes_jo)
+  nomes_jo <- tibble(nomes_jo)
   
   pares_coint_ci1 <- nomes_adf %>% dplyr::filter(nomes_adf %in% nomes_jo$nomes_jo)
   pares_coint_ci1s <- pares_coint_adf[pares_coint_ci1$nomes_adf]
@@ -283,7 +283,7 @@ for(i in 1:length(sem_ini)){
 
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
-saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_ci_",
+saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci_",
                           pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 
 return(resultados)
