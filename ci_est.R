@@ -1,5 +1,5 @@
 
-pairs.estimation_ci <- function(dados=NULL,
+pairs.estimation.ci <- function(dados=NULL,
                                 formationp=NULL,
                                 tradep=NULL,
                                 tr=NULL,
@@ -7,18 +7,6 @@ pairs.estimation_ci <- function(dados=NULL,
                                 stop=0.8,
                                 window_est="Fixed"){
 
-### Pacotes  
-  
-require(readxl)
-require(purrr)
-require(dplyr)
-require(doParallel)
-require(xts)
-require(stringr)
-require(egcm)  
-require(timetk)
-require(lubridate)
-require(gtools)
     
 ### Mensagens de erro
   criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
@@ -36,6 +24,18 @@ require(gtools)
     stop('Faltando Critério de Escolha de Par ou Critério Inválido')
   }   
   
+  ### Pacotes  
+  Rcpp::sourceCpp("cpp_return.cpp")
+  require(readxl)
+  require(purrr)
+  require(dplyr)
+  require(doParallel)
+  require(xts)
+  require(stringr)
+  require(egcm)  
+  require(timetk)
+  require(lubridate)
+  require(gtools)
   
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
@@ -190,7 +190,6 @@ for(i in 1:length(sem_ini)){
   
   print("Estimando")
   if(window_est == "fixed"){
-    print("Estimando")
     pares_coint_trading <- list(NULL)
     cl <- makeCluster(no_cores)
     registerDoParallel(cl)
@@ -218,7 +217,6 @@ for(i in 1:length(sem_ini)){
   } else {
     stop("Faltando método de estimação")
   }
-  
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
   
@@ -284,7 +282,10 @@ for(i in 1:length(sem_ini)){
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
 saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci_",
-                          pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
+                          pares_sele_crit,"_",
+                          formationp,"f_",
+                          tradep,"t_",
+                          window_est,".rds"))
 
 return(resultados)
 }

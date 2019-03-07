@@ -29,9 +29,9 @@ colnames(Dados_2008_2018) <- Nomes
 rm(Nomes)
 
 formationp <- 12
-tradep <- 4
-pares_sele_crit <- "random"
-window_est <- "fixed"
+tradep <- 6
+pares_sele_crit <- "top_return"
+window_est <- "mov"
 
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
@@ -186,8 +186,8 @@ for(i in 1:length(sem_ini)){
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
   ###### Estimando Periodo de trading
+  print("Estimando")
   if(window_est == "fixed"){
-    print("Estimando")
     pares_coint_trading <- list(NULL)
     cl <- makeCluster(no_cores)
     registerDoParallel(cl)
@@ -213,7 +213,7 @@ for(i in 1:length(sem_ini)){
                                      )
                                    }
   } else {
-    break("Faltando método de estimação")
+    stop("Faltando método de estimação")
   }
   ###### Estimando Estados Ocultos do período de tradings e normalizando
   ###### O componente de media
@@ -280,7 +280,11 @@ for(i in 1:length(sem_ini)){
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
 saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci_",
-                          pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
+                          pares_sele_crit,"_",
+                          formationp,"f_",
+                          tradep,"t_",
+                          window_est,
+                          ".rds"))
 
   
   
