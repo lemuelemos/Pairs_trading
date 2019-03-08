@@ -1,41 +1,14 @@
-library(readxl)
-library(timetk)
-library(purrr)
-library(dplyr)
-library(doParallel)
-library(xts)
-library(stringr)
-library(partialCI)
-library(lubridate)
 
-
-##### Organizando os Dados
-### Código Auxiliar em C++ para estimar os retornos
-Dados_2000_2019 <- read_excel("Dados_2000_2019.xlsx")
-Dados_2000_2019$Dates <- as.Date(Dados_2000_2019$Dates)
-Dados_2000_2019 %>%
-  map_if(is.character,as.numeric) %>%
-  tk_tbl(timetk_idx = T) %>%
-  tk_xts-> Dados_2000_2019
-
-Dados_2008_2018 <- Dados_2000_2019["2008/2018"]
-rm(Dados_2000_2019)
-Dados_2008_2018[,apply(Dados_2008_2018,2,
-                       function(x) any(is.na(x)) == F), 
-                drop = F] -> Dados_2008_2018
-
-Nomes <- colnames(Dados_2008_2018) ## Taking the names of equity's
-Nomes <- str_remove(str_sub(Nomes, 1,6),"\\.")
-colnames(Dados_2008_2018) <- Nomes
-rm(Nomes)
-
-##### Estimando as combinações de pares
-## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
-pairs.estimation <- function(dados=NULL,formationp=NULL,
+pairs.estimation.pci <- function(dados=NULL,formationp=NULL,
                              tradep=NULL,tr=NULL,
-                             pares_sele_crit=NULL,stop=0.8){
-  criterios <- c('top_sharp_balanced',"top_return_balanced","top_sharp","top_return","random")
+                             pares_sele_crit=NULL,stop=0.8,
+                             window_est="fixed"){
   
+  criterios <- c('top_sharp_balanced',
+                 "top_return_balanced",
+                 "top_sharp",
+                 "top_return",
+                 "random")
   if(is.null(tr)){
     tr <- c(1,0.5)
   }
@@ -47,14 +20,29 @@ pairs.estimation <- function(dados=NULL,formationp=NULL,
     stop('Faltando Janela de Trade')
   } else if(is.null(pares_sele_crit) || !pares_sele_crit %in% criterios){
     stop('Faltando Critério de Escolha de Par ou Critério Inválido')
-  } 
+  }
+  
+  ### Carregando os Pacotes
+  Rcpp::sourceCpp("cpp_return.cpp")
+  require(readxl)
+  require(timetk)
+  require(purrr)
+  require(dplyr)
+  require(doParallel)
+  require(xts)
+  require(stringr)
+  require(partialCI)
+  require(lubridate)
+  require(gtools)
 
-resultados1 <- NULL
-resultados2 <- NULL
-resultados <- NULL
-Rcpp::sourceCpp("cpp_return.cpp") 
-sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
-sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
+  ##### Estimando as combinações de pares
+  resultados1 <- NULL
+  resultados2 <- NULL
+  resultados <- NULL
+  Rcpp::sourceCpp("cpp_return.cpp") 
+  sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
+  sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
+
 
 for(i in 1:length(sem_ini)){
   if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
@@ -76,6 +64,28 @@ for(i in 1:length(sem_ini)){
                            }
     stopCluster(cl)
   } else{break}
+
+  for(i in 1:length(sem_ini)){
+    if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
+      datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                           date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
+      dados_per_form <- Dados_2008_2018[datas_form]
+      print(paste0("Periodo de Formação ",datas_form))
+      
+      no_cores <- detectCores() 
+      pares <- gtools::permutations(n=ncol(dados_per_form),
+                                    2,colnames(dados_per_form))
+      cl <- makeCluster(no_cores) 
+      registerDoParallel(cl)
+      pares_coint <- foreach(i=1:nrow(pares),
+                             .errorhandling = "pass", 
+                             .packages = "partialCI") %dopar%{
+                               fit.pci(dados_per_form[,pares[i,1]],dados_per_form[,pares[i,2]], 
+                                       pci_opt_method = "twostep")
+                             }
+      stopCluster(cl)
+    } else{break}
+
   
   ###### Retirando Pares co rho e R2 maior que 0.5
   
@@ -201,6 +211,7 @@ for(i in 1:length(sem_ini)){
   ###### Estimando Periodo de trading
   
   print("Estimando")
+  if(window_est == "fixed"){
   pares_coint_trading <- list(NULL)
   cl <- makeCluster(no_cores)
   registerDoParallel(cl)
@@ -213,6 +224,23 @@ for(i in 1:length(sem_ini)){
                                              pci_opt_method = "twostep")}
                                    )
                                  }
+  } else if(window_est == "mov"){
+    pares_coint_trading <- list(NULL)
+    cl <- makeCluster(no_cores)
+    registerDoParallel(cl)
+    pares_coint_trading <- foreach(k=nrow(dados_per_form):nrow(dados_per_trading),
+                                   j=1:(nrow(dados_per_trading)-nrow(dados_per_form)+1),
+                                   .errorhandling = "pass",
+                                   .packages = c("partialCI","stringr")) %dopar%{
+                                     lapply(pares_trading_20$Pares, function(x) {
+                                       fit.pci(dados_per_trading[j:k,str_trim(str_sub(x,end = -7))],
+                                               dados_per_trading[j:k,str_trim(str_sub(x, start = -6))],
+                                               pci_opt_method = "twostep")}
+                                     )
+                                   }
+  } else {
+    stop("Faltando método de estimação")
+  }
   stopCluster(cl)
   
   ###### Estimando Estados Ocultos do período de tradings e normalizando
@@ -285,7 +313,11 @@ for(i in 1:length(sem_ini)){
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
 saveRDS(resultados,paste0(getwd(),"/resultados/resultados_pci_",
-                          pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
+                          pares_sele_crit,"_",
+                          formationp,"f_",
+                          tradep,"t_",
+                          window_est,".rds"))
+
 return(resultados)
 }
-
+}
