@@ -57,7 +57,7 @@ sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios
 sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 
 for(i in 1:length(sem_ini)){
-  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
+  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
     dados_per_form <- Dados_2008_2018[datas_form]
@@ -194,7 +194,7 @@ for(i in 1:length(sem_ini)){
   
   datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
                           date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
-  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[nrow(dados_per_form)+1],"/",
+  print(paste0("Periodo de Trading ",date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
                date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
@@ -278,13 +278,14 @@ for(i in 1:length(sem_ini)){
                 date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
+  resultados2[[aux]][["ParesT"]] <- pares_coint_trading
   
 }
 
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
-#saveRDS(resultados,paste0("~/Pairs_trading/resultados/resultados_pci_",
-                          #pares_sele_crit,".rds"))
+saveRDS(resultados,paste0(getwd(),"/resultados/resultados_pci_",
+                          pares_sele_crit,"_",formationp,"f_",tradep,"t",".rds"))
 return(resultados)
 }
 
