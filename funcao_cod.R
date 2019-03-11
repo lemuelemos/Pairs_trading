@@ -2,7 +2,8 @@
 pairs.estimation.pci <- function(dados=NULL,formationp=NULL,
                              tradep=NULL,tr=NULL,
                              pares_sele_crit=NULL,stop=0.8,
-                             window_est="fixed"){
+                             window_est="fixed",
+                             pci.method = "twostep"){
   
   criterios <- c('top_sharp_balanced',
                  "top_return_balanced",
@@ -43,7 +44,6 @@ pairs.estimation.pci <- function(dados=NULL,formationp=NULL,
   sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
   sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
 
-
 for(i in 1:length(sem_ini)){
   if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
@@ -60,31 +60,10 @@ for(i in 1:length(sem_ini)){
                            .errorhandling = "pass", 
                            .packages = "partialCI") %dopar%{
                              fit.pci(dados_per_form[,pares[i,1]],dados_per_form[,pares[i,2]], 
-                                     pci_opt_method = "twostep")
+                                     pci_opt_method = pci.method)
                            }
     stopCluster(cl)
   } else{break}
-
-  for(i in 1:length(sem_ini)){
-    if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
-      datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
-                           date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
-      dados_per_form <- Dados_2008_2018[datas_form]
-      print(paste0("Periodo de Formação ",datas_form))
-      
-      no_cores <- detectCores() 
-      pares <- gtools::permutations(n=ncol(dados_per_form),
-                                    2,colnames(dados_per_form))
-      cl <- makeCluster(no_cores) 
-      registerDoParallel(cl)
-      pares_coint <- foreach(i=1:nrow(pares),
-                             .errorhandling = "pass", 
-                             .packages = "partialCI") %dopar%{
-                               fit.pci(dados_per_form[,pares[i,1]],dados_per_form[,pares[i,2]], 
-                                       pci_opt_method = "twostep")
-                             }
-      stopCluster(cl)
-    } else{break}
 
   
   ###### Retirando Pares co rho e R2 maior que 0.5
@@ -221,7 +200,7 @@ for(i in 1:length(sem_ini)){
                                    lapply(pares_trading_20$Pares, function(x) {
                                      fit.pci(dados_per_trading[1:k,str_trim(str_sub(x,end = -7))],
                                              dados_per_trading[1:k,str_trim(str_sub(x, start = -6))],
-                                             pci_opt_method = "twostep")}
+                                             pci_opt_method = pci.method)}
                                    )
                                  }
   } else if(window_est == "mov"){
@@ -235,7 +214,7 @@ for(i in 1:length(sem_ini)){
                                      lapply(pares_trading_20$Pares, function(x) {
                                        fit.pci(dados_per_trading[j:k,str_trim(str_sub(x,end = -7))],
                                                dados_per_trading[j:k,str_trim(str_sub(x, start = -6))],
-                                               pci_opt_method = "twostep")}
+                                               pci_opt_method = pci.method)}
                                      )
                                    }
   } else {
@@ -320,4 +299,4 @@ saveRDS(resultados,paste0(getwd(),"/resultados/resultados_pci_",
 
 return(resultados)
 }
-}
+
