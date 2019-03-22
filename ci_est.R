@@ -5,7 +5,8 @@ pairs.estimation.ci <- function(dados=NULL,
                                 tr=NULL,
                                 pares_sele_crit=NULL,
                                 stop=0.8,
-                                window_est="Fixed"){
+                                window_est="Fixed",
+                                no_cores = 1){
 
     
 ### Mensagens de erro
@@ -39,19 +40,42 @@ pairs.estimation.ci <- function(dados=NULL,
   
 ##### Estimando as combinações de pares
 ## Ano de 360 dias. 4 anos 1460 dias. 6 meses 180 dias
-resultados1 <- NULL
-resultados2 <- NULL
-resultados <- NULL
+  resultados1 <- NULL
+  resultados2 <- NULL
+  resultados <- NULL
+  pares_form <- NULL
+  pares_trade <- NULL
+  pares_estimados <- NULL
+
 sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
-sem_fim <- endpoints(Dados_2008_2018,"months",k=tradep)
+
 for(i in 1:length(sem_ini)){
-  if((date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)<=date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
-    datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
-                         date(Dados_2008_2018)[sem_ini[i]]+months(formationp)-1)
+  ############################# Datas Formação
+  
+  datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                       date(Dados_2008_2018)[sem_ini[i]]+months(formationp))
+  form_end_index <- endpoints(Dados_2008_2018[datas_form], "months", k=formationp)[2]
+  datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],
+                       "/",date(Dados_2008_2018[datas_form][form_end_index,]))
+  
+  ############################# Datas Trade
+  
+  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
+                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep))
+  trade_end_index <- endpoints(Dados_2008_2018[datas_trading], "months", k=formationp+tradep)[2]
+  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],
+                          "/",date(Dados_2008_2018[datas_trading][trade_end_index,]))
+  
+  #############################
+  
+  if(date(Dados_2008_2018[datas_trading][trade_end_index,]) <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
-    no_cores <- detectCores() 
+    if(no_cores > detectCores()) {
+      stop("Inexist this number of cores")
+    }
+    
     pares <- gtools::permutations(n=ncol(dados_per_form),
                                   2,colnames(dados_per_form))
     cl <- makeCluster(no_cores) 
@@ -128,13 +152,13 @@ for(i in 1:length(sem_ini)){
   portret$Pares <- names(pares_coint_ci1s)
   portret$Retorno <- sapply(resultados_form, function(x) ((tail(x$invest,1)/1)-1)*100)
   portret$Desvio <- sapply(resultados_form, function(x) sd(x$invest))
-  portret$Sharp <- portret$Retorno/portret$Desvio
+  portret$Sharp <- (portret$Retorno)/100/portret$Desvio
   #portret$R2 <- sapply(pares_formation, function(x) x$pvmr)
   portret <- as_tibble(portret)
   
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Sumario"]] <- portret
   resultados1[[paste0("Perido de Formação ",datas_form)]][["Trades"]] <- resultados_form
-  resultados1[[paste0("Perido de Formação ",datas_form)]][["ParesF"]] <- pares_coint_ci1s
+  pares_form[[paste0("Perido de Formação ",datas_form)]][["ParesF"]] <- pares_coint_ci1s
   #######################################################
   ###### Selecionando os pares com melhor sharpe a ######
   ###### partir de cada ativo na ponta dependente  ######
@@ -179,11 +203,10 @@ for(i in 1:length(sem_ini)){
   
   ###### Formatando dados para período de trading
   
-  datas_trading <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
-                          date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1)
   print(paste0("Periodo de Trading ",
                date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
-               date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1))
+               date(Dados_2008_2018[datas_trading][trade_end_index,])))
+        
   dados_per_trading <- Dados_2008_2018[datas_trading]
   
   ###### Estimando Periodo de trading
@@ -266,7 +289,7 @@ for(i in 1:length(sem_ini)){
   portret_trading$Pares <- pares_trading_20$Pares
   portret_trading$Retorno <- sapply(resultados_trading, function(x) ((tail(x$invest,1)/1)-1)*100)
   portret_trading$Desvio <- sapply(resultados_trading, function(x) sd(x$invest))
-  portret_trading$Sharp <- portret_trading$Retorno/portret_trading$Desvio
+  portret_trading$Sharp <- (portret_trading$Retorno)/100/portret_trading$Desvio
   portret_trading$Beta_voL <- sapply(betas, function(x) x$DP)
   portret_trading <- as_tibble(portret_trading)
   
@@ -275,17 +298,26 @@ for(i in 1:length(sem_ini)){
                 date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
-  resultados2[[aux]][["ParesT"]] <- pares_coint_trading
+  pares_trade[[aux]][["ParesT"]] <- pares_coint_trading
   
 }
 
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
-saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci_",
+pares_estimados[["Periodo de Formação"]] <- pares_form
+pares_estimados[["Periodo de Trading"]] <- pares_trade
+
+saveRDS(resultados,paste0(getwd(),"/resultados/resultados_ci/resultados_ci_",
                           pares_sele_crit,"_",
                           formationp,"f_",
                           tradep,"t_",
                           window_est,".rds"))
+
+saveRDS(pares_estimados,paste0(getwd(),"/resultados/resultados_ci/pares_ci_",
+                               pares_sele_crit,"_",
+                               formationp,"f_",
+                               tradep,"t_",
+                               window_est,".rds"))
 
 return(resultados)
 }
