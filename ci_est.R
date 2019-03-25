@@ -68,12 +68,14 @@ for(i in 1:length(sem_ini)){
   
   #############################
   
-  if(date(Dados_2008_2018[datas_trading][trade_end_index,]) <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
+  if(!is.na(trade_end_index)){
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
     if(no_cores > detectCores()) {
       stop("Inexist this number of cores")
+    } else if(is.null(no_cores)){
+      no_cores <- detectCores()
     }
     
     pares <- gtools::permutations(n=ncol(dados_per_form),

@@ -6,7 +6,7 @@ pairs.estimation.pci <- function(dados=NULL,
                                  stop=0.8,
                                  window_est="fixed",
                                  pci.method = "twostep",
-                                 no_cores = 1){
+                                 no_cores = NULL){
   
   criterios <- c('top_sharp_balanced',
                  "top_return_balanced",
@@ -69,12 +69,14 @@ for(i in 1:length(sem_ini)){
   
   #############################
   
-  if(date(Dados_2008_2018[datas_trading][trade_end_index,]) <= date(Dados_2008_2018)[nrow(Dados_2008_2018)]){
+  if(!is.na(trade_end_index)){
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
     if(no_cores > detectCores()) {
       stop("Inexist this number of cores")
+    } else if(is.null(no_cores)){
+      no_cores <- detectCores()
     }
 
     pares <- gtools::permutations(n=ncol(dados_per_form),
@@ -205,7 +207,7 @@ for(i in 1:length(sem_ini)){
   }
   
   ###### Formatando dados para período de trading
-  
+
   print(paste0("Periodo de Trading ",
                date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
                date(Dados_2008_2018[datas_trading][trade_end_index,])))
@@ -314,6 +316,7 @@ for(i in 1:length(sem_ini)){
   
 }
 
+print("Salvando os resultados")
 resultados[["Periodo de Formação"]] <- resultados1
 resultados[["Periodo de Trading"]] <- resultados2
 pares_estimados[["Periodo de Formação"]] <- pares_form
