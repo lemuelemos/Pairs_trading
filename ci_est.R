@@ -6,7 +6,7 @@ pairs.estimation.ci <- function(dados=NULL,
                                 pares_sele_crit=NULL,
                                 stop=0.8,
                                 window_est="Fixed",
-                                no_cores = 1){
+                                no_cores = NULL){
 
     
 ### Mensagens de erro

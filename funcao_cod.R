@@ -50,7 +50,7 @@ pairs.estimation.pci <- function(dados=NULL,
   Rcpp::sourceCpp("cpp_return.cpp") 
   sem_ini <- endpoints(Dados_2008_2018,"months",k=tradep)+1 ### Demarca os inicios de cada semestre
 
-for(i in 1:length(sem_ini)){
+for(i in 42:length(sem_ini)){
   ############################# Datas Formação
   
   datas_form <- paste0(date(Dados_2008_2018)[sem_ini[i]],"/",
@@ -73,10 +73,10 @@ for(i in 1:length(sem_ini)){
     dados_per_form <- Dados_2008_2018[datas_form]
     print(paste0("Periodo de Formação ",datas_form))
     
-    if(no_cores > detectCores()) {
-      stop("Inexist this number of cores")
-    } else if(is.null(no_cores)){
+    if(is.null(no_cores)) {
       no_cores <- detectCores()
+    } else if(no_cores > detectCores()){
+      stop("Inexist this number of cores")
     }
 
     pares <- gtools::permutations(n=ncol(dados_per_form),
@@ -309,7 +309,8 @@ for(i in 1:length(sem_ini)){
   
   aux <- paste0("Periodo de Trading ",
                 date(Dados_2008_2018)[sem_ini[i]]+months(formationp),"/",
-                date(Dados_2008_2018)[sem_ini[i]]+months(formationp)+months(tradep)-1) 
+                date(Dados_2008_2018[datas_trading][trade_end_index,])) 
+  
   resultados2[[aux]][["Sumario"]] <- portret_trading
   resultados2[[aux]][["Trades"]] <- resultados_trading
   pares_trade[[aux]][["ParesT"]] <- pares_coint_trading
